@@ -1,0 +1,13 @@
+node_modules
+dist
+.next
+.open-next
+.wrangler
+.playwright-mcp
+.env
+.env.*
+!.env.example
+coverage
+*.tsbuildinfo
+*.log
+apps/api/src/generated

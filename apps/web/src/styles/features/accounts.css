@@ -1,0 +1,119 @@
+.page-intro {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.page-intro h2 {
+  margin-bottom: 7px;
+  font-size: 21px;
+}
+
+.page-intro p {
+  max-width: 660px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.security-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 1px solid rgba(114, 230, 160, 0.13);
+  border-radius: 11px;
+  background: rgba(114, 230, 160, 0.04);
+}
+
+.security-strip__icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.security-strip > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.security-strip strong {
+  font-size: 11px;
+}
+
+.security-strip p {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.security-strip__status {
+  color: var(--positive);
+  font-size: 9px;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-control {
+  display: flex;
+  width: min(340px, 100%);
+  height: 37px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0d1014;
+  color: var(--muted);
+}
+
+.search-control input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  outline: 0;
+}
+
+.search-control input::placeholder {
+  color: #515964;
+}
+
+.accounts-table table {
+  min-width: 1000px;
+}
+
+.cell-caption {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.permission-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(114, 230, 160, 0.14);
+  border-radius: 7px;
+  background: rgba(114, 230, 160, 0.045);
+  color: var(--positive);
+  font-size: 9px;
+}

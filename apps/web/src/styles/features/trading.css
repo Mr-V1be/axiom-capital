@@ -1,0 +1,152 @@
+.trading-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: 18px;
+}
+
+.trading-ticket {
+  position: sticky;
+  top: calc(var(--topbar-height) + 18px);
+}
+
+.market-strip {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.5fr) repeat(3, 1fr) auto;
+  min-height: 70px;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.market-strip > div:not(.market-pair) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.market-strip span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.market-strip strong {
+  font-size: 12px;
+}
+
+.market-pair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.market-pair div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asset-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f7931a;
+  color: #fff !important;
+  font-size: 18px !important;
+}
+
+.selection-summary,
+.live-indicator {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-indicator i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--positive);
+  box-shadow: 0 0 0 4px var(--positive-soft);
+}
+
+.account-selector {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-selector > button {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto 130px;
+  align-items: center;
+  gap: 11px;
+  min-height: 62px;
+  padding: 8px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+}
+
+.account-selector > button:last-child {
+  border-bottom: 0;
+}
+
+.account-selector > button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.account-selector > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.selector-check {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+}
+
+.selected .selector-check {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #11150c;
+}
+
+.selector-person {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.selector-person strong,
+.account-selector > button > strong {
+  font-size: 11px;
+}
+
+.selector-person small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.order-ticket {
+  padding-bottom: 16px;
+}
+
+.order-ticket > *:not(.panel__header) {
+  margin-right: 16px;
+  margin-left: 16px;
+}

@@ -1,0 +1,90 @@
+.person-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-cell > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.person-cell strong {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.person-cell span:not(.avatar) {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+.spinner--large {
+  width: 26px;
+  height: 26px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.data-state,
+.fatal-error {
+  display: flex;
+  min-height: 52vh;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.data-state--error,
+.fatal-error {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.data-state strong,
+.fatal-error h1 {
+  color: var(--text);
+}
+
+.data-state p,
+.fatal-error p {
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.fatal-error__icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--negative-soft);
+  color: var(--negative);
+}

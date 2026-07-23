@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountStatus {
+  PENDING
+  CONNECTED
+  DEGRADED
+  DISABLED
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  FAILED
+  FILLED
+  CANCELLED
+}
+
+enum SettlementStatus {
+  CALCULATED
+  AWAITING_INVESTOR
+  FUNDED
+  DISTRIBUTED
+  CANCELLED
+}
+
+model Tenant {
+  id          String            @id
+  name        String
+  createdAt   DateTime          @default(now())
+  users       User[]
+  accounts    InvestorAccount[]
+  orderBatch  OrderBatch[]
+  settlements Settlement[]
+  auditEvents AuditEvent[]
+}
+
+model User {
+  id        String   @id
+  tenantId  String
+  email     String
+  name      String
+  role      String
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model InvestorAccount {
+  id             String          @id
+  tenantId       String
+  label          String
+  investorName   String
+  exchange       String
+  status         AccountStatus
+  encryptedKey   String
+  encryptedSecret String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  lastSyncedAt   DateTime?
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  snapshots      BalanceSnapshot[]
+  orders         Order[]
+  riskProfile    RiskProfile?
+  settlements    Settlement[]
+  splitConfig    SplitConfiguration?
+
+  @@unique([tenantId, label])
+  @@index([tenantId, status])
+}
+
+model BalanceSnapshot {
+  id         String          @id
+  accountId  String
+  equity     Decimal         @db.Decimal(36, 18)
+  pnlToday   Decimal         @db.Decimal(36, 18)
+  pnlTotal   Decimal         @db.Decimal(36, 18)
+  currency   String
+  balances   Json
+  capturedAt DateTime        @default(now())
+  account    InvestorAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, capturedAt(sort: Desc)])
+}
+
+model SplitConfiguration {
+  id             String          @id
+  accountId      String          @unique
+  chainId        Int
+  address        String
+  immutable      Boolean
+  traderSharePct Decimal         @db.Decimal(5, 2)
+  verifiedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  account        InvestorAccount @relation(fields: [accountId], references: [id])
+}
+
+model RiskProfile {
+  id                 String          @id
+  accountId          String          @unique
+  maxAllocationPct   Decimal         @db.Decimal(5, 2)
+  maxDailyLossPct    Decimal         @db.Decimal(5, 2)
+  maxOpenPositions   Int
+  allowedSymbols     String[]
+  tradingEnabled     Boolean         @default(true)
+  updatedAt          DateTime        @updatedAt
+  account            InvestorAccount @relation(fields: [accountId], references: [id])
+}
+
+model OrderBatch {
+  id             String   @id
+  tenantId       String
+  idempotencyKey String
+  symbol         String
+  side           String
+  type           String
+  allocationPct  Decimal  @db.Decimal(5, 2)
+  submittedAt    DateTime @default(now())
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  orders         Order[]
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, submittedAt(sort: Desc)])
+}
+
+model Order {
+  id              String          @id
+  batchId         String
+  accountId       String
+  exchangeOrderId String?
+  status          OrderStatus
+  allocatedAmount Decimal         @db.Decimal(36, 18)
+  currency        String
+  failureReason   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  batch           OrderBatch      @relation(fields: [batchId], references: [id])
+  account         InvestorAccount @relation(fields: [accountId], references: [id])
+
+  @@unique([batchId, accountId])
+  @@index([accountId, createdAt(sort: Desc)])
+}
+
+model Settlement {
+  id                    String           @id
+  tenantId              String
+  accountId             String
+  periodStart           DateTime
+  periodEnd             DateTime
+  grossProfit           Decimal          @db.Decimal(36, 18)
+  investorShare         Decimal          @db.Decimal(36, 18)
+  traderShare           Decimal          @db.Decimal(36, 18)
+  traderSharePct        Decimal          @db.Decimal(5, 2)
+  highWaterMark         Decimal          @db.Decimal(36, 18)
+  currency              String
+  splitAddress          String?
+  status                SettlementStatus
+  createdAt             DateTime         @default(now())
+  tenant                Tenant           @relation(fields: [tenantId], references: [id])
+  account               InvestorAccount  @relation(fields: [accountId], references: [id])
+
+  @@unique([accountId, periodStart, periodEnd])
+  @@index([tenantId, createdAt(sort: Desc)])
+}
+
+model AuditEvent {
+  id            String   @id
+  tenantId      String
+  actorId       String?
+  action        String
+  aggregateType String
+  aggregateId   String
+  payload       Json
+  requestId     String
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([aggregateType, aggregateId])
+}

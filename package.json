@@ -1,0 +1,32 @@
+{
+  "name": "axiom-capital",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev -w @axiom/api\" \"npm run dev -w @axiom/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run architecture && npm run test --workspaces --if-present",
+    "architecture": "tsx scripts/check-architecture.ts",
+    "db:generate": "npm run db:generate -w @axiom/api",
+    "db:migrate": "npm run db:migrate -w @axiom/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.22",
+      "sharp": "0.35.3"
+    },
+    "miniflare": {
+      "sharp": "0.35.3"
+    }
+  }
+}

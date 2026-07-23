@@ -1,0 +1,118 @@
+.side-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #0d1014;
+}
+
+.side-switcher button {
+  height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.side-switcher .buy.active {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.side-switcher .sell.active {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+
+.order-ticket .field,
+.order-ticket .form-grid {
+  margin-top: 14px;
+}
+
+.allocation-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 15px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #0d1014;
+}
+
+.allocation-preview div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.allocation-preview span,
+.risk-check span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.allocation-preview strong {
+  font-size: 12px;
+}
+
+.risk-check {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 11px;
+  border: 1px solid rgba(114, 230, 160, 0.14);
+  border-radius: 9px;
+  background: rgba(114, 230, 160, 0.045);
+  color: var(--positive);
+}
+
+.risk-check--warning {
+  border-color: rgba(255, 206, 106, 0.16);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.risk-check div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.risk-check strong {
+  font-size: 9px;
+}
+
+.order-ticket__submit {
+  width: calc(100% - 32px);
+  margin-top: 14px;
+}
+
+.order-ticket__notice {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.execution-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.execution-grid > div {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 16px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 10px;
+}

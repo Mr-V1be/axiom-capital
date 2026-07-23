@@ -1,0 +1,81 @@
+@media (max-width: 1180px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trading-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .trading-ticket {
+    position: static;
+  }
+
+  .settlement-row {
+    grid-template-columns: minmax(170px, 1.3fr) repeat(3, 1fr) auto;
+  }
+
+  .settlement-row > div:nth-child(5) {
+    display: none !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .sidebar {
+    width: min(290px, 86vw);
+    transform: translateX(-102%);
+    box-shadow: var(--shadow-lg);
+    transition: transform 220ms ease;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  .sidebar__close,
+  .mobile-menu {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--muted);
+  }
+
+  .sidebar__close {
+    margin-left: auto;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    border: 0;
+    background: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(3px);
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .topbar {
+    justify-content: flex-start;
+    gap: 14px;
+  }
+
+  .topbar__actions {
+    margin-left: auto;
+  }
+
+  .settlement-flow {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .settlement-flow > div {
+    flex: 0 0 auto;
+  }
+}
