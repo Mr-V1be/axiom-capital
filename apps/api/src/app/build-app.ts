@@ -62,7 +62,11 @@ export async function buildApp(config: AppConfig, container: AppContainer) {
         portfolioRoutes(container.useCases.getPortfolioOverview),
       );
       await protectedApp.register(
-        tradingRoutes(container.useCases.placeBatchOrder),
+        tradingRoutes(
+          container.useCases.placeBatchOrder,
+          container.useCases.syncBatchOrders,
+          container.useCases.cancelBatchOrders,
+        ),
       );
       await protectedApp.register(
         settlementRoutes(

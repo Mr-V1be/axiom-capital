@@ -24,6 +24,8 @@ const account = InvestorAccount.create({
   label: "Main",
   investorName: "Investor",
   exchange: "mexc",
+  accountScope: "standalone",
+  marketType: "spot",
   status: "connected",
   encryptedKey: "key",
   encryptedSecret: "secret",

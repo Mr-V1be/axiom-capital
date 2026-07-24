@@ -1,6 +1,7 @@
 import type {
   AccountListDto,
   BatchOrderDto,
+  CancelBatchOrderInput,
   ConnectAccountInput,
   CreateSettlementInput,
   InvestorAccountDto,
@@ -14,6 +15,11 @@ export interface DataGateway {
   listAccounts(signal?: AbortSignal): Promise<AccountListDto>;
   connectAccount(input: ConnectAccountInput): Promise<InvestorAccountDto>;
   placeBatchOrder(input: PlaceBatchOrderInput): Promise<BatchOrderDto>;
+  syncBatchOrder(batchId: string): Promise<BatchOrderDto>;
+  cancelBatchOrder(
+    batchId: string,
+    input: CancelBatchOrderInput,
+  ): Promise<BatchOrderDto>;
   listSettlements(signal?: AbortSignal): Promise<{ items: SettlementDto[] }>;
   createSettlement(input: CreateSettlementInput): Promise<SettlementDto>;
 }

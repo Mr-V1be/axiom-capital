@@ -8,6 +8,7 @@ import { Database } from "./prisma-client.js";
 const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
   pending: "PENDING",
   accepted: "ACCEPTED",
+  partially_filled: "PARTIALLY_FILLED",
   rejected: "REJECTED",
   failed: "FAILED",
   filled: "FILLED",
@@ -17,6 +18,7 @@ const toDbStatus: Record<OrderStatus, DbOrderStatus> = {
 const toDomainStatus: Record<DbOrderStatus, OrderStatus> = {
   PENDING: "pending",
   ACCEPTED: "accepted",
+  PARTIALLY_FILLED: "partially_filled",
   REJECTED: "rejected",
   FAILED: "failed",
   FILLED: "filled",
@@ -35,12 +37,36 @@ function isUniqueConstraint(error: unknown): boolean {
 export class PrismaOrderRepository implements OrderRepository {
   constructor(private readonly db: Database) {}
 
+  async findById(tenantId: string, id: string) {
+    const row = await this.db.orderBatch.findFirst({
+      where: { id, tenantId },
+      include: { orders: true },
+    });
+    return row ? this.toDomain(row) : null;
+  }
+
   async findByIdempotencyKey(tenantId: string, idempotencyKey: string) {
     const row = await this.db.orderBatch.findUnique({
       where: { tenantId_idempotencyKey: { tenantId, idempotencyKey } },
       include: { orders: true },
     });
-    if (!row) return null;
+    return row ? this.toDomain(row) : null;
+  }
+
+  private toDomain(row: {
+    id: string;
+    tenantId: string;
+    idempotencyKey: string;
+    symbol: string;
+    side: string;
+    type: string;
+    allocationMode: string;
+    allocationPct: { toString(): string };
+    requestedQuoteAmount: { toString(): string } | null;
+    submittedAt: Date;
+    orders: DbOrder[];
+  }): OrderBatch {
+    const currency = row.orders[0]?.currency ?? "USDT";
     return OrderBatch.create({
       id: row.id,
       tenantId: row.tenantId,
@@ -48,7 +74,19 @@ export class PrismaOrderRepository implements OrderRepository {
       symbol: row.symbol,
       side: row.side as "buy" | "sell",
       type: row.type as "market" | "limit",
+      allocationMode:
+        row.allocationMode === "fixed_quote"
+          ? "fixed_quote"
+          : "equity_percentage",
       allocationPercent: Number(row.allocationPct),
+      ...(row.requestedQuoteAmount
+        ? {
+            requestedQuoteAmount: Money.of(
+              row.requestedQuoteAmount.toString(),
+              currency,
+            ),
+          }
+        : {}),
       submittedAt: row.submittedAt,
       orders: row.orders.map((item: DbOrder) => {
         const order = Order.pending({
@@ -58,8 +96,22 @@ export class PrismaOrderRepository implements OrderRepository {
           allocated: Money.of(item.allocatedAmount.toString(), item.currency),
         });
         const status = toDomainStatus[item.status as DbOrderStatus];
-        if (status === "accepted" || status === "filled") {
-          order.accept(item.exchangeOrderId ?? "unknown", status === "filled");
+        if (
+          status === "accepted" ||
+          status === "partially_filled" ||
+          status === "filled" ||
+          status === "cancelled"
+        ) {
+          order.applyExecution({
+            exchangeOrderId: item.exchangeOrderId ?? "unknown",
+            status,
+            filled: Money.of(item.filledAmount.toString(), item.currency),
+            remaining: Money.of(item.remainingAmount.toString(), item.currency),
+            ...(item.averagePrice
+              ? { averagePrice: item.averagePrice.toString() }
+              : {}),
+            syncedAt: item.lastSyncedAt ?? item.updatedAt,
+          });
         } else if (status === "rejected") {
           order.reject(item.failureReason ?? "Rejected");
         } else if (status === "failed") {
@@ -82,7 +134,10 @@ export class PrismaOrderRepository implements OrderRepository {
             symbol: state.symbol,
             side: state.side,
             type: state.type,
+            allocationMode: state.allocationMode,
             allocationPct: state.allocationPercent,
+            requestedQuoteAmount:
+              state.requestedQuoteAmount?.toString() ?? null,
             submittedAt: state.submittedAt,
           },
         }),
@@ -96,6 +151,10 @@ export class PrismaOrderRepository implements OrderRepository {
               exchangeOrderId: item.exchangeOrderId ?? null,
               status: toDbStatus[item.status],
               allocatedAmount: item.allocated.toString(),
+              filledAmount: item.filled.toString(),
+              remainingAmount: item.remaining.toString(),
+              averagePrice: item.averagePrice ?? null,
+              lastSyncedAt: item.lastSyncedAt ?? null,
               currency: item.allocated.currency,
               failureReason: item.failureReason ?? null,
             };
@@ -124,6 +183,10 @@ export class PrismaOrderRepository implements OrderRepository {
           data: {
             exchangeOrderId: item.exchangeOrderId ?? null,
             status: toDbStatus[item.status],
+            filledAmount: item.filled.toString(),
+            remainingAmount: item.remaining.toString(),
+            averagePrice: item.averagePrice ?? null,
+            lastSyncedAt: item.lastSyncedAt ?? null,
             failureReason: item.failureReason ?? null,
           },
         });

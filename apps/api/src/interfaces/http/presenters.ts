@@ -18,6 +18,11 @@ export function accountDto(
     label: account.label,
     investorName: account.investorName,
     exchange: account.exchange,
+    accountScope: account.accountScope,
+    marketType: account.marketType,
+    ...(account.externalAccountId
+      ? { externalAccountId: account.externalAccountId }
+      : {}),
     status: account.status,
     equity: balance ? money(balance.equity) : { amount: "0", currency },
     pnlToday: balance ? money(balance.pnlToday) : { amount: "0", currency },
@@ -33,19 +38,25 @@ export function accountDto(
 export function orderBatchDto(batch: Readonly<OrderBatchState>) {
   return {
     batchId: batch.id,
+    symbol: batch.symbol,
+    side: batch.side,
+    type: batch.type,
+    allocationMode: batch.allocationMode,
+    allocationPercent: batch.allocationPercent,
+    ...(batch.requestedQuoteAmount
+      ? { requestedQuoteAmount: money(batch.requestedQuoteAmount) }
+      : {}),
     submittedAt: batch.submittedAt.toISOString(),
     results: batch.orders.map((order) => {
       const state = order.snapshot();
       return {
         accountId: state.accountId,
         ...(state.exchangeOrderId ? { orderId: state.exchangeOrderId } : {}),
-        status:
-          state.status === "accepted" || state.status === "filled"
-            ? "accepted" as const
-            : state.status === "rejected"
-              ? "rejected" as const
-              : "failed" as const,
+        status: state.status,
         allocated: money(state.allocated),
+        filled: money(state.filled),
+        remaining: money(state.remaining),
+        ...(state.averagePrice ? { averagePrice: state.averagePrice } : {}),
         ...(state.failureReason ? { reason: state.failureReason } : {}),
       };
     }),

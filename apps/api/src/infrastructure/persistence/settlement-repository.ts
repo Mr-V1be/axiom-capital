@@ -93,12 +93,24 @@ export class PrismaSettlementRepository
     };
   }
 
-  async getImmutableSplit(accountId: string): Promise<string | null> {
+  async getVerifiedConfiguration(accountId: string) {
     const row = await this.db.splitConfiguration.findFirst({
       where: { accountId, immutable: true, verifiedAt: { not: null } },
-      select: { address: true },
+      select: {
+        address: true,
+        chainId: true,
+        traderSharePct: true,
+        immutable: true,
+        verifiedAt: true,
+      },
     });
-    return row?.address ?? null;
+    if (!row?.verifiedAt || !row.immutable) return null;
+    return {
+      address: row.address,
+      chainId: row.chainId,
+      traderSharePercent: Number(row.traderSharePct),
+      immutable: true as const,
+      verifiedAt: row.verifiedAt,
+    };
   }
-
 }

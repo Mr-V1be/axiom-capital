@@ -4,6 +4,8 @@ import { Money } from "../shared/money.js";
 export interface AccountCredentials {
   apiKey: string;
   secret: string;
+  marketType: "spot" | "swap";
+  externalAccountId?: string;
 }
 
 export interface AccountRepository {

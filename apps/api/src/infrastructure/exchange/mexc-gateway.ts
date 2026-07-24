@@ -5,6 +5,7 @@ import {
   ExchangeGateway,
   ExchangeGatewayFactory,
   ExchangeOrderRequest,
+  ExchangeOrderResult,
 } from "../../domain/exchange/exchange-gateway.js";
 import { ExternalServiceError } from "../../domain/shared/domain-error.js";
 
@@ -19,7 +20,7 @@ export class MexcGateway implements ExchangeGateway {
       apiKey: credentials.apiKey,
       secret: credentials.secret,
       enableRateLimit: true,
-      options: { defaultType: "spot" },
+      options: { defaultType: credentials.marketType },
     });
   }
 
@@ -28,8 +29,8 @@ export class MexcGateway implements ExchangeGateway {
       const exchange = this.client(credentials);
       const balance = await exchange.fetchBalance();
       const info = balance.info as MexcAccountInfo;
-      if (info.canTrade !== true) throw new Error("Trading permission is required");
-      if (info.canWithdraw !== false) {
+      if (info.canTrade === false) throw new Error("Trading permission is required");
+      if (info.canWithdraw === true) {
         throw new Error("Withdrawal permission must be explicitly disabled");
       }
     } catch (error) {
@@ -55,6 +56,18 @@ export class MexcGateway implements ExchangeGateway {
     }
   }
 
+  async fetchOpenPositions(credentials: AccountCredentials): Promise<number> {
+    if (credentials.marketType === "spot") return 0;
+    try {
+      const positions = await this.client(credentials).fetchPositions();
+      return positions.filter((position) =>
+        new Decimal(position.contracts ?? 0).isPositive()
+      ).length;
+    } catch (error) {
+      throw this.wrap(error, "Unable to fetch open MEXC positions");
+    }
+  }
+
   async placeOrder(
     credentials: AccountCredentials,
     request: ExchangeOrderRequest,
@@ -62,29 +75,123 @@ export class MexcGateway implements ExchangeGateway {
     try {
       const exchange = this.client(credentials);
       await exchange.loadMarkets();
-      const ticker = await exchange.fetchTicker(request.symbol);
-      const price = request.limitPrice ?? String(ticker.ask ?? ticker.last);
+      const symbol = this.symbol(request.symbol, credentials.marketType);
+      const ticker = request.limitPrice
+        ? null
+        : await exchange.fetchTicker(symbol);
+      const price = request.limitPrice ?? String(ticker?.ask ?? ticker?.last);
       if (!price || new Decimal(price).lessThanOrEqualTo(0)) {
         throw new Error("Unable to resolve executable price");
       }
       const baseAmount = new Decimal(request.quoteAmount).dividedBy(price);
-      const amount = Number(exchange.amountToPrecision(request.symbol, baseAmount.toString()));
+      const market = exchange.market(symbol);
+      const amountInUnits = credentials.marketType === "swap"
+        ? baseAmount.dividedBy(market.contractSize ?? 1)
+        : baseAmount;
+      const amount = Number(
+        exchange.amountToPrecision(symbol, amountInUnits.toString()),
+      );
+      const parameters = {
+        ...(credentials.marketType === "swap"
+          ? { externalOid: request.clientOrderId }
+          : { clientOrderId: request.clientOrderId }),
+        ...(request.leverage ? { leverage: request.leverage } : {}),
+        ...(request.marginMode ? { marginMode: request.marginMode } : {}),
+        ...(request.reduceOnly !== undefined
+          ? { reduceOnly: request.reduceOnly }
+          : {}),
+      };
       const result = await exchange.createOrder(
-        request.symbol,
+        symbol,
         request.type,
         request.side,
         amount,
         request.type === "limit" ? Number(price) : undefined,
-        { clientOrderId: request.clientOrderId },
+        parameters,
       );
       if (!result.id) throw new Error("Exchange returned no order identifier");
-      return {
-        orderId: String(result.id),
-        status: result.status === "closed" ? "filled" as const : "accepted" as const,
-      };
+      return this.normalizeOrder(result, request.quoteAmount);
     } catch (error) {
       throw this.wrap(error, "MEXC rejected the order");
     }
+  }
+
+  async fetchOrder(
+    credentials: AccountCredentials,
+    reference: { orderId: string; symbol: string },
+  ): Promise<ExchangeOrderResult> {
+    try {
+      const exchange = this.client(credentials);
+      const symbol = this.symbol(reference.symbol, credentials.marketType);
+      await exchange.loadMarkets();
+      const order = exchange.has.fetchOrder
+        ? await exchange.fetchOrder(reference.orderId, symbol)
+        : (await exchange.fetchOrders(symbol)).find(
+            (item) => String(item.id) === reference.orderId,
+          );
+      if (!order) throw new Error("Order was not found on MEXC");
+      return this.normalizeOrder(order);
+    } catch (error) {
+      throw this.wrap(error, "Unable to synchronize MEXC order");
+    }
+  }
+
+  async cancelOrder(
+    credentials: AccountCredentials,
+    reference: { orderId: string; symbol: string },
+  ): Promise<ExchangeOrderResult> {
+    try {
+      const exchange = this.client(credentials);
+      const symbol = this.symbol(reference.symbol, credentials.marketType);
+      await exchange.loadMarkets();
+      await exchange.cancelOrder(reference.orderId, symbol);
+      return await this.fetchOrder(credentials, reference);
+    } catch (error) {
+      throw this.wrap(error, "Unable to cancel MEXC order");
+    }
+  }
+
+  private normalizeOrder(
+    order: {
+      id?: string | undefined;
+      status?: string | undefined;
+      filled?: number | undefined;
+      remaining?: number | undefined;
+      cost?: number | undefined;
+      average?: number | undefined;
+      price?: number | undefined;
+    },
+    requestedQuote?: string,
+  ): ExchangeOrderResult {
+    if (!order.id) throw new Error("Exchange returned no order identifier");
+    const price = new Decimal(order.average ?? order.price ?? 0);
+    const filled = order.cost !== undefined
+      ? new Decimal(order.cost)
+      : new Decimal(order.filled ?? 0).times(price);
+    const remaining = requestedQuote
+      ? Decimal.max(new Decimal(requestedQuote).minus(filled), 0)
+      : new Decimal(order.remaining ?? 0).times(price);
+    const status = order.status === "canceled"
+      ? "cancelled"
+      : order.status === "closed"
+        ? "filled"
+        : filled.isPositive()
+          ? "partially_filled"
+          : "accepted";
+    return {
+      orderId: String(order.id),
+      status,
+      filledQuote: filled.toFixed(),
+      remainingQuote: remaining.toFixed(),
+      ...(price.isPositive() ? { averagePrice: price.toFixed() } : {}),
+    };
+  }
+
+  private symbol(symbol: string, marketType: "spot" | "swap"): string {
+    if (marketType === "spot" || symbol.includes(":")) return symbol;
+    const quote = symbol.split("/")[1];
+    if (!quote) throw new Error(`Invalid swap symbol: ${symbol}`);
+    return `${symbol}:${quote}`;
   }
 
   private wrap(error: unknown, message: string): ExternalServiceError {

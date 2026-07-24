@@ -1,5 +1,7 @@
 import { Decimal } from "decimal.js";
 
+const MoneyDecimal = Decimal.clone({ precision: 50 });
+
 export class Money {
   private constructor(
     private readonly value: Decimal,
@@ -10,7 +12,7 @@ export class Money {
     const normalizedCurrency = currency.trim().toUpperCase();
     if (!normalizedCurrency) throw new Error("Currency is required");
 
-    const value = new Decimal(amount);
+    const value = new MoneyDecimal(amount);
     if (!value.isFinite()) throw new Error("Money must be finite");
     return new Money(value, normalizedCurrency);
   }
@@ -34,7 +36,7 @@ export class Money {
   }
 
   percentage(percent: Decimal.Value): Money {
-    return this.multiply(new Decimal(percent).dividedBy(100));
+    return this.multiply(new MoneyDecimal(percent).dividedBy(100));
   }
 
   max(other: Money): Money {

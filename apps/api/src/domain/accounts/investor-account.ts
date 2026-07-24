@@ -2,6 +2,8 @@ import { DomainError } from "../shared/domain-error.js";
 
 export type AccountStatus = "pending" | "connected" | "degraded" | "disabled";
 export type ExchangeName = "mexc";
+export type AccountScope = "standalone" | "subaccount";
+export type MarketType = "spot" | "swap";
 
 export interface InvestorAccountState {
   id: string;
@@ -9,6 +11,9 @@ export interface InvestorAccountState {
   label: string;
   investorName: string;
   exchange: ExchangeName;
+  accountScope: AccountScope;
+  marketType: MarketType;
+  externalAccountId?: string;
   status: AccountStatus;
   encryptedKey: string;
   encryptedSecret: string;
@@ -30,10 +35,16 @@ export class InvestorAccount {
     if (state.investorName.trim().length < 2) {
       throw new InvalidAccountError("Investor name is too short");
     }
+    if (state.accountScope === "subaccount" && !state.externalAccountId?.trim()) {
+      throw new InvalidAccountError("Subaccount identifier is required");
+    }
     return new InvestorAccount({
       ...state,
       label: state.label.trim(),
       investorName: state.investorName.trim(),
+      ...(state.externalAccountId
+        ? { externalAccountId: state.externalAccountId.trim() }
+        : {}),
     });
   }
 

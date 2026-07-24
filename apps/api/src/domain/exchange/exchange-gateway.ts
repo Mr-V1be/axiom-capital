@@ -14,19 +14,39 @@ export interface ExchangeOrderRequest {
   quoteAmount: string;
   limitPrice?: string;
   clientOrderId: string;
+  leverage?: number;
+  marginMode?: "cross" | "isolated";
+  reduceOnly?: boolean;
 }
 
 export interface ExchangeOrderResult {
   orderId: string;
-  status: "accepted" | "filled";
+  status: "accepted" | "partially_filled" | "filled" | "cancelled";
+  filledQuote: string;
+  remainingQuote: string;
+  averagePrice?: string;
+}
+
+export interface ExchangeOrderReference {
+  orderId: string;
+  symbol: string;
 }
 
 export interface ExchangeGateway {
   verifyReadTradeOnly(credentials: AccountCredentials): Promise<void>;
   fetchBalance(credentials: AccountCredentials): Promise<ExchangeBalance>;
+  fetchOpenPositions(credentials: AccountCredentials): Promise<number>;
   placeOrder(
     credentials: AccountCredentials,
     request: ExchangeOrderRequest,
+  ): Promise<ExchangeOrderResult>;
+  fetchOrder(
+    credentials: AccountCredentials,
+    reference: ExchangeOrderReference,
+  ): Promise<ExchangeOrderResult>;
+  cancelOrder(
+    credentials: AccountCredentials,
+    reference: ExchangeOrderReference,
   ): Promise<ExchangeOrderResult>;
 }
 

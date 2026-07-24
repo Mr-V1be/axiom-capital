@@ -16,6 +16,23 @@ The repository is a modular monolith with explicit bounded contexts:
 Domain code depends only on ports. Fastify, Prisma, MEXC/CCXT and encryption
 live behind adapters. The web client consumes shared, versioned contracts.
 
+## Execution guarantees
+
+- A fixed quote order is weighted by account equity; the final account receives
+  the decimal residual, so the allocations equal the requested total.
+- Spot and USDT-M futures accounts cannot be mixed in one batch.
+- Risk limits are evaluated per account using its current equity and live open
+  position count before any batch is reserved.
+- Each exchange order has an idempotency key and stores filled, remaining,
+  average-price and synchronization state.
+- Open limit orders can be synchronized or cancelled per account.
+- A settlement cannot enter the funding workflow when its displayed share
+  differs from the verified immutable Split configuration.
+
+The hosted UI uses a deterministic demo gateway. Real MEXC execution requires
+trade-only, withdrawal-disabled API keys and an IP allowlist. Real Splits
+funding requires a verified current-generation contract configuration.
+
 ## Local development
 
 1. Copy `.env.example` to `.env`.

@@ -7,6 +7,8 @@ import { Button } from "../../shared/ui/Button";
 interface Props {
   accountIds: readonly string[];
   totalEquity: number;
+  marketType?: "spot" | "swap";
+  mixedMarkets: boolean;
   loading: boolean;
   onSubmit(input: PlaceBatchOrderInput): Promise<void>;
 }
@@ -14,32 +16,51 @@ interface Props {
 export function OrderTicket({
   accountIds,
   totalEquity,
+  marketType,
+  mixedMarkets,
   loading,
   onSubmit,
 }: Props) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [type, setType] = useState<"market" | "limit">("market");
+  const [type, setType] = useState<"market" | "limit">("limit");
   const [symbol, setSymbol] = useState("BTC/USDT");
+  const [allocationMode, setAllocationMode] = useState<
+    "equity_percentage" | "fixed_quote"
+  >("fixed_quote");
   const [allocation, setAllocation] = useState(5);
+  const [fixedAmount, setFixedAmount] = useState("1000");
   const [price, setPrice] = useState("118420");
+  const [leverage, setLeverage] = useState(1);
   const amount = useMemo(
-    () => totalEquity * (allocation / 100),
-    [totalEquity, allocation],
+    () => allocationMode === "fixed_quote"
+      ? Number(fixedAmount)
+      : totalEquity * (allocation / 100),
+    [allocationMode, allocation, fixedAmount, totalEquity],
   );
-  const valid = accountIds.length > 0 && allocation > 0 && allocation <= 10;
+  const valid = accountIds.length > 0 && !mixedMarkets && amount > 0 &&
+    amount <= totalEquity && (
+      allocationMode === "fixed_quote" || allocation <= 10
+    );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!valid) return;
-    const input: PlaceBatchOrderInput = {
+    const common = {
       idempotencyKey: crypto.randomUUID(),
       accountIds: [...accountIds],
       symbol,
       side,
       type,
-      allocationPercent: allocation,
       ...(type === "limit" ? { limitPrice: price } : {}),
+      ...(marketType === "swap" ? {
+        leverage,
+        marginMode: "cross" as const,
+        reduceOnly: false,
+      } : {}),
     };
+    const input: PlaceBatchOrderInput = allocationMode === "fixed_quote"
+      ? { ...common, allocationMode, totalQuoteAmount: fixedAmount }
+      : { ...common, allocationMode, allocationPercent: allocation };
     await onSubmit(input);
   };
 
@@ -87,19 +108,48 @@ export function OrderTicket({
           </select>
         </label>
         <label className="field">
-          <span>Распределение</span>
+          <span>Режим аллокации</span>
+          <select
+            value={allocationMode}
+            onChange={(event) => setAllocationMode(
+              event.target.value as "equity_percentage" | "fixed_quote",
+            )}
+          >
+            <option value="fixed_quote">Общая сумма</option>
+            <option value="equity_percentage">% каждого счёта</option>
+          </select>
+        </label>
+      </div>
+      <div className="form-grid">
+        <label className="field">
+          <span>{allocationMode === "fixed_quote" ? "Общая сумма" : "Доля счёта"}</span>
           <div className="input-suffix">
             <input
               type="number"
               min={0.1}
-              max={10}
+              max={allocationMode === "fixed_quote" ? totalEquity : 10}
               step={0.1}
-              value={allocation}
-              onChange={(event) => setAllocation(Number(event.target.value))}
+              value={allocationMode === "fixed_quote" ? fixedAmount : allocation}
+              onChange={(event) => allocationMode === "fixed_quote"
+                ? setFixedAmount(event.target.value)
+                : setAllocation(Number(event.target.value))}
             />
-            <span>%</span>
+            <span>{allocationMode === "fixed_quote" ? "USDT" : "%"}</span>
           </div>
         </label>
+        {marketType === "swap" && (
+          <label className="field">
+            <span>Плечо</span>
+            <select
+              value={leverage}
+              onChange={(event) => setLeverage(Number(event.target.value))}
+            >
+              {[1, 2, 3, 5, 10, 20].map((value) => (
+                <option key={value} value={value}>×{value}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       {type === "limit" && (
         <label className="field">
@@ -131,8 +181,10 @@ export function OrderTicket({
           <strong>{valid ? "Pre-trade проверка пройдена" : "Проверьте параметры"}</strong>
           <span>
             {valid
-              ? "Лимиты позиции, дневного убытка и разрешённых пар соблюдены"
-              : "Выберите счёт и не превышайте лимит распределения 10%"}
+              ? "Сумма распределится пропорционально equity выбранных счетов"
+              : mixedMarkets
+                ? "Нельзя смешивать spot и futures в одной пакетной заявке"
+                : "Выберите счёт и проверьте лимит распределения"}
           </span>
         </div>
         {valid && <CheckCircle2 size={17} />}

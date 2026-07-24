@@ -17,6 +17,7 @@ enum AccountStatus {
 enum OrderStatus {
   PENDING
   ACCEPTED
+  PARTIALLY_FILLED
   REJECTED
   FAILED
   FILLED
@@ -61,6 +62,9 @@ model InvestorAccount {
   label          String
   investorName   String
   exchange       String
+  accountScope   String          @default("standalone")
+  marketType     String          @default("spot")
+  externalAccountId String?
   status         AccountStatus
   encryptedKey   String
   encryptedSecret String
@@ -123,7 +127,9 @@ model OrderBatch {
   symbol         String
   side           String
   type           String
-  allocationPct  Decimal  @db.Decimal(5, 2)
+  allocationMode String   @default("equity_percentage")
+  allocationPct  Decimal  @db.Decimal(9, 6)
+  requestedQuoteAmount Decimal? @db.Decimal(36, 18)
   submittedAt    DateTime @default(now())
   tenant         Tenant   @relation(fields: [tenantId], references: [id])
   orders         Order[]
@@ -139,6 +145,10 @@ model Order {
   exchangeOrderId String?
   status          OrderStatus
   allocatedAmount Decimal         @db.Decimal(36, 18)
+  filledAmount    Decimal         @default(0) @db.Decimal(36, 18)
+  remainingAmount Decimal         @default(0) @db.Decimal(36, 18)
+  averagePrice    Decimal?        @db.Decimal(36, 18)
+  lastSyncedAt    DateTime?
   currency        String
   failureReason   String?
   createdAt       DateTime        @default(now())

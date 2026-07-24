@@ -8,14 +8,15 @@ import {
 } from "../../domain/exchange/exchange-gateway.js";
 import { Clock, IdGenerator } from "../../domain/shared/id.js";
 import { Money } from "../../domain/shared/money.js";
+import { ProportionalAllocationStrategy } from "../../domain/trading/allocation-plan.js";
 import { OrderBatch } from "../../domain/trading/order.js";
 import {
   ExecutionScheduler,
   OrderRepository,
-  ProportionalAllocationStrategy,
   RiskPolicy,
 } from "../../domain/trading/trading-ports.js";
 import { AuditWriter, SecretCipher } from "../shared/context.js";
+import { OrderExecutionAccess } from "./order-execution-access.js";
 import { PlaceBatchOrder } from "./place-batch-order.js";
 
 const account = InvestorAccount.create({
@@ -24,6 +25,8 @@ const account = InvestorAccount.create({
   label: "Main",
   investorName: "Investor",
   exchange: "mexc",
+  accountScope: "standalone",
+  marketType: "spot",
   status: "connected",
   encryptedKey: "encrypted-key",
   encryptedSecret: "encrypted-secret",
@@ -63,6 +66,7 @@ function fixture(existing: OrderBatch | null = null) {
     async equityCurve() { return []; },
   };
   const orders: OrderRepository = {
+    async findById() { return existing; },
     async findByIdempotencyKey() { return existing; },
     async reserve(batch) {
       reserved = true;
@@ -75,10 +79,32 @@ function fixture(existing: OrderBatch | null = null) {
     async fetchBalance() {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
+    async fetchOpenPositions() { return 0; },
     async placeOrder() {
       assert.equal(reserved, true, "batch must be reserved before execution");
       exchangeCalls += 1;
-      return { orderId: "mexc-order-1", status: "accepted" };
+      return {
+        orderId: "mexc-order-1",
+        status: "accepted",
+        filledQuote: "0",
+        remainingQuote: "500",
+      };
+    },
+    async fetchOrder() {
+      return {
+        orderId: "mexc-order-1",
+        status: "accepted",
+        filledQuote: "0",
+        remainingQuote: "500",
+      };
+    },
+    async cancelOrder() {
+      return {
+        orderId: "mexc-order-1",
+        status: "cancelled",
+        filledQuote: "0",
+        remainingQuote: "500",
+      };
     },
   };
   const factory: ExchangeGatewayFactory = { for: () => gateway };
@@ -100,11 +126,10 @@ function fixture(existing: OrderBatch | null = null) {
     accounts,
     balances,
     orders,
-    factory,
+    new OrderExecutionAccess(accounts, factory, cipher),
     new ProportionalAllocationStrategy(),
     risk,
     scheduler,
-    cipher,
     audit,
     new SequenceIds(),
     clock,
@@ -122,6 +147,7 @@ const input = {
   symbol: "BTC/USDT",
   side: "buy" as const,
   type: "market" as const,
+  allocationMode: "equity_percentage" as const,
   allocationPercent: 5,
 };
 

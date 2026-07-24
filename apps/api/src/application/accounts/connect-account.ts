@@ -26,7 +26,14 @@ export class ConnectAccount {
       throw new ConflictError(`Account label "${input.label}" already exists`);
     }
 
-    const credentials = { apiKey: input.apiKey, secret: input.secret };
+    const credentials = {
+      apiKey: input.apiKey,
+      secret: input.secret,
+      marketType: input.marketType,
+      ...(input.externalAccountId
+        ? { externalAccountId: input.externalAccountId }
+        : {}),
+    };
     const gateway = this.exchanges.for(input.exchange);
     await gateway.verifyReadTradeOnly(credentials);
     const balance = await gateway.fetchBalance(credentials);
@@ -43,6 +50,11 @@ export class ConnectAccount {
       label: input.label,
       investorName: input.investorName,
       exchange: input.exchange,
+      accountScope: input.accountScope,
+      marketType: input.marketType,
+      ...(input.externalAccountId
+        ? { externalAccountId: input.externalAccountId }
+        : {}),
       status: "pending",
       encryptedKey,
       encryptedSecret,
@@ -63,7 +75,12 @@ export class ConnectAccount {
       action: "account.connected",
       aggregateType: "InvestorAccount",
       aggregateId: account.snapshot().id,
-      payload: { exchange: input.exchange, withdrawPermission: false },
+      payload: {
+        exchange: input.exchange,
+        accountScope: input.accountScope,
+        marketType: input.marketType,
+        withdrawalDisabled: input.withdrawDisabledConfirmed,
+      },
     });
 
     return account.snapshot();

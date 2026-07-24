@@ -3,10 +3,13 @@ import { ListAccounts } from "../application/accounts/list-accounts.js";
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
 import { ListSettlements } from "../application/settlements/list-settlements.js";
+import { CancelBatchOrders } from "../application/trading/cancel-batch-orders.js";
+import { OrderExecutionAccess } from "../application/trading/order-execution-access.js";
 import { PlaceBatchOrder } from "../application/trading/place-batch-order.js";
+import { SyncBatchOrders } from "../application/trading/sync-batch-orders.js";
 import { AccountRiskPolicy, CompositeRiskPolicy } from "../domain/risk/risk-profile.js";
 import { SystemClock } from "../domain/shared/id.js";
-import { ProportionalAllocationStrategy } from "../domain/trading/trading-ports.js";
+import { ProportionalAllocationStrategy } from "../domain/trading/allocation-plan.js";
 import { AppConfig } from "../infrastructure/config/app-config.js";
 import {
   DefaultExchangeGatewayFactory,
@@ -35,6 +38,8 @@ export function createContainer(config: AppConfig) {
   const settlements = new PrismaSettlementRepository(db);
   const audit = new PrismaAuditWriter(db, ids);
   const exchanges = new DefaultExchangeGatewayFactory(new MexcGateway());
+  const scheduler = new BoundedExecutionScheduler(5);
+  const executionAccess = new OrderExecutionAccess(accounts, exchanges, cipher);
 
   return {
     db,
@@ -54,13 +59,26 @@ export function createContainer(config: AppConfig) {
         accounts,
         balances,
         orders,
-        exchanges,
+        executionAccess,
         new ProportionalAllocationStrategy(),
         new CompositeRiskPolicy([new AccountRiskPolicy(riskProfiles)]),
-        new BoundedExecutionScheduler(5),
-        cipher,
+        scheduler,
         audit,
         ids,
+        clock,
+      ),
+      syncBatchOrders: new SyncBatchOrders(
+        orders,
+        executionAccess,
+        scheduler,
+        audit,
+        clock,
+      ),
+      cancelBatchOrders: new CancelBatchOrders(
+        orders,
+        executionAccess,
+        scheduler,
+        audit,
         clock,
       ),
       createSettlement: new CreateSettlement(

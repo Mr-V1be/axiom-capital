@@ -75,6 +75,9 @@ export class PrismaAccountRepository
           label: state.label,
           investorName: state.investorName,
           exchange: state.exchange,
+          accountScope: state.accountScope,
+          marketType: state.marketType,
+          externalAccountId: state.externalAccountId ?? null,
           status: toDbStatus[state.status],
           encryptedKey: state.encryptedKey,
           encryptedSecret: state.encryptedSecret,
@@ -128,6 +131,9 @@ export class PrismaAccountRepository
     label: string;
     investorName: string;
     exchange: string;
+    accountScope: string;
+    marketType: string;
+    externalAccountId: string | null;
     status: DbAccountStatus;
     encryptedKey: string;
     encryptedSecret: string;
@@ -140,6 +146,12 @@ export class PrismaAccountRepository
       label: row.label,
       investorName: row.investorName,
       exchange: "mexc",
+      accountScope:
+        row.accountScope === "subaccount" ? "subaccount" : "standalone",
+      marketType: row.marketType === "swap" ? "swap" : "spot",
+      ...(row.externalAccountId
+        ? { externalAccountId: row.externalAccountId }
+        : {}),
       status: toDomainStatus[row.status],
       encryptedKey: row.encryptedKey,
       encryptedSecret: row.encryptedSecret,

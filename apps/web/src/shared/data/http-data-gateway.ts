@@ -1,6 +1,7 @@
 import type {
   AccountListDto,
   BatchOrderDto,
+  CancelBatchOrderInput,
   ConnectAccountInput,
   CreateSettlementInput,
   InvestorAccountDto,
@@ -48,6 +49,19 @@ export class HttpDataGateway implements DataGateway {
 
   placeBatchOrder(input: PlaceBatchOrderInput) {
     return this.request<BatchOrderDto>("/v1/orders/batch", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  syncBatchOrder(batchId: string) {
+    return this.request<BatchOrderDto>(`/v1/orders/${batchId}/sync`, {
+      method: "POST",
+    });
+  }
+
+  cancelBatchOrder(batchId: string, input: CancelBatchOrderInput) {
+    return this.request<BatchOrderDto>(`/v1/orders/${batchId}/cancel`, {
       method: "POST",
       body: JSON.stringify(input),
     });

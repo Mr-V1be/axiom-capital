@@ -16,5 +16,15 @@ export interface SettlementRepository {
 }
 
 export interface SplitAddressBook {
-  getImmutableSplit(accountId: string): Promise<string | null>;
+  getVerifiedConfiguration(
+    accountId: string,
+  ): Promise<VerifiedSplitConfiguration | null>;
+}
+
+export interface VerifiedSplitConfiguration {
+  address: string;
+  chainId: number;
+  traderSharePercent: number;
+  immutable: true;
+  verifiedAt: Date;
 }

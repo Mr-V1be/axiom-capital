@@ -1,6 +1,9 @@
 import { CreateSettlementInput } from "@axiom/contracts";
 import { AccountRepository, BalanceRepository } from "../../domain/accounts/account-ports.js";
-import { NotFoundError } from "../../domain/shared/domain-error.js";
+import {
+  NotFoundError,
+  PolicyViolationError,
+} from "../../domain/shared/domain-error.js";
 import { Clock, IdGenerator } from "../../domain/shared/id.js";
 import { SettlementRepository, SplitAddressBook } from "../../domain/settlements/settlement-ports.js";
 import { Settlement } from "../../domain/settlements/settlement.js";
@@ -24,6 +27,13 @@ export class CreateSettlement {
     if (!balance) throw new NotFoundError("BalanceSnapshot", input.accountId);
     const previous = await this.settlements.latestAnchor(input.accountId);
     const accountState = account.snapshot();
+    const split = await this.splits.getVerifiedConfiguration(input.accountId);
+    if (split && split.traderSharePercent !== input.traderSharePercent) {
+      throw new PolicyViolationError(
+        "Settlement share must match the verified immutable Split configuration",
+        "split_share_consistency",
+      );
+    }
 
     const settlement = Settlement.calculate({
       id: this.ids.next(),
@@ -34,11 +44,10 @@ export class CreateSettlement {
       periodEnd: new Date(input.periodEnd),
       currentEquity: balance.equity,
       previousHighWaterMark: previous?.highWaterMark ?? balance.equity.subtract(balance.pnlTotal),
-      traderSharePercent: input.traderSharePercent,
+      traderSharePercent: split?.traderSharePercent ?? input.traderSharePercent,
       createdAt: this.clock.now(),
     });
-    const splitAddress = await this.splits.getImmutableSplit(input.accountId);
-    if (splitAddress) settlement.requestFunding(splitAddress);
+    if (split) settlement.requestFunding(split.address);
 
     await this.settlements.save(settlement);
     await this.audit.write({
@@ -49,6 +58,9 @@ export class CreateSettlement {
       payload: {
         accountId: input.accountId,
         grossProfit: settlement.snapshot().grossProfit.toString(),
+        traderSharePercent: settlement.snapshot().traderSharePercent,
+        splitVerified: Boolean(split),
+        ...(split ? { splitAddress: split.address, chainId: split.chainId } : {}),
       },
     });
     return settlement.snapshot();

@@ -2,17 +2,20 @@ import { InvestorAccount } from "../accounts/investor-account.js";
 import { Money } from "../shared/money.js";
 import { OrderBatch } from "./order.js";
 
-export interface AllocationStrategy {
-  allocate(equity: Money, percentage: number): Money;
+export interface AllocationTarget {
+  accountId: string;
+  equity: Money;
 }
 
-export class ProportionalAllocationStrategy implements AllocationStrategy {
-  allocate(equity: Money, percentage: number): Money {
-    if (percentage <= 0 || percentage > 100) {
-      throw new Error("Allocation percentage must be within (0, 100]");
-    }
-    return equity.percentage(percentage);
-  }
+export type AllocationRequest =
+  | { mode: "equity_percentage"; percentage: number }
+  | { mode: "fixed_quote"; totalQuoteAmount: string };
+
+export interface AllocationStrategy {
+  plan(
+    targets: readonly AllocationTarget[],
+    request: AllocationRequest,
+  ): ReadonlyMap<string, Money>;
 }
 
 export interface RiskDecision {
@@ -36,6 +39,7 @@ export interface RiskPolicy {
 }
 
 export interface OrderRepository {
+  findById(tenantId: string, id: string): Promise<OrderBatch | null>;
   findByIdempotencyKey(
     tenantId: string,
     key: string,

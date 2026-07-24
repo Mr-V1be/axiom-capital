@@ -8,6 +8,11 @@ const labels: Record<string, string> = {
   funded: "Профинансирован",
   distributed: "Распределён",
   cancelled: "Отменён",
+  accepted: "Принят",
+  partially_filled: "Частично исполнен",
+  filled: "Исполнен",
+  rejected: "Отклонён",
+  failed: "Ошибка",
 };
 
 export function StatusBadge({ status }: { status: string }) {

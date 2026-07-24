@@ -1,105 +1,20 @@
 import type {
+  BatchOrderDto,
+  CancelBatchOrderInput,
   ConnectAccountInput,
   InvestorAccountDto,
   PlaceBatchOrderInput,
   SettlementDto,
 } from "@axiom/contracts";
 import { DataGateway } from "./data-gateway";
+import { demoAccounts, demoNow, demoSettlements } from "./demo-seed";
 
 const money = (amount: string, currency = "USDT") => ({ amount, currency });
-const now = "2026-07-23T16:00:00.000Z";
-
-const initialAccounts: InvestorAccountDto[] = [
-  {
-    id: "acc_vladislav_00000001",
-    label: "Vladislav · Main",
-    investorName: "Vladislav",
-    exchange: "mexc",
-    status: "connected",
-    equity: money("42840.20"),
-    pnlToday: money("684.90"),
-    pnlTotal: money("6280.20"),
-    permissions: { read: true, trade: true, withdraw: false },
-    lastSyncedAt: now,
-    createdAt: "2026-04-12T10:00:00.000Z",
-  },
-  {
-    id: "acc_roman_000000000001",
-    label: "Roman · Growth",
-    investorName: "Roman",
-    exchange: "mexc",
-    status: "connected",
-    equity: money("31602.45"),
-    pnlToday: money("312.18"),
-    pnlTotal: money("3902.45"),
-    permissions: { read: true, trade: true, withdraw: false },
-    lastSyncedAt: "2026-07-23T15:59:42.000Z",
-    createdAt: "2026-05-03T09:00:00.000Z",
-  },
-  {
-    id: "acc_alex_0000000000001",
-    label: "Alex · Conservative",
-    investorName: "Alex",
-    exchange: "mexc",
-    status: "connected",
-    equity: money("27150.00"),
-    pnlToday: money("182.64"),
-    pnlTotal: money("2150.00"),
-    permissions: { read: true, trade: true, withdraw: false },
-    lastSyncedAt: "2026-07-23T15:59:21.000Z",
-    createdAt: "2026-05-19T11:00:00.000Z",
-  },
-  {
-    id: "acc_maria_000000000001",
-    label: "Maria · Alpha",
-    investorName: "Maria",
-    exchange: "mexc",
-    status: "degraded",
-    equity: money("22548.75"),
-    pnlToday: money("-86.40"),
-    pnlTotal: money("1548.75"),
-    permissions: { read: true, trade: true, withdraw: false },
-    lastSyncedAt: "2026-07-23T15:41:08.000Z",
-    createdAt: "2026-06-02T13:00:00.000Z",
-  },
-];
-
-const initialSettlements: SettlementDto[] = [
-  {
-    id: "set_vladislav_00000001",
-    accountId: initialAccounts[0]!.id,
-    investorName: "Vladislav",
-    periodStart: "2026-07-01T00:00:00.000Z",
-    periodEnd: "2026-07-23T00:00:00.000Z",
-    grossProfit: money("3280.20"),
-    investorShare: money("2624.16"),
-    traderShare: money("656.04"),
-    traderSharePercent: 20,
-    highWaterMark: money("42840.20"),
-    splitAddress: "0x86A2fFc3b1d9c4a530Fb78f9b733E8B7B1c6D020",
-    status: "awaiting_investor",
-    createdAt: now,
-  },
-  {
-    id: "set_roman_000000000001",
-    accountId: initialAccounts[1]!.id,
-    investorName: "Roman",
-    periodStart: "2026-07-01T00:00:00.000Z",
-    periodEnd: "2026-07-20T00:00:00.000Z",
-    grossProfit: money("1902.45"),
-    investorShare: money("1521.96"),
-    traderShare: money("380.49"),
-    traderSharePercent: 20,
-    highWaterMark: money("31602.45"),
-    splitAddress: "0x54B2F15d54a1A8108B7cB4d0120C2D88fD0e7B11",
-    status: "distributed",
-    createdAt: "2026-07-20T09:00:00.000Z",
-  },
-];
 
 export class DemoDataGateway implements DataGateway {
-  private accounts = [...initialAccounts];
-  private settlements = [...initialSettlements];
+  private accounts = [...demoAccounts];
+  private settlements = [...demoSettlements];
+  private batches = new Map<string, BatchOrderDto>();
 
   async getPortfolioOverview() {
     const equity = this.accounts.reduce(
@@ -127,7 +42,7 @@ export class DemoDataGateway implements DataGateway {
           (index > 12 ? 680 : 0)
         ).toFixed(2),
       })),
-      updatedAt: now,
+      updatedAt: demoNow,
     };
   }
 
@@ -141,6 +56,11 @@ export class DemoDataGateway implements DataGateway {
       label: input.label,
       investorName: input.investorName,
       exchange: input.exchange,
+      accountScope: input.accountScope,
+      marketType: input.marketType,
+      ...(input.externalAccountId
+        ? { externalAccountId: input.externalAccountId }
+        : {}),
       status: "connected",
       equity: money("0"),
       pnlToday: money("0"),
@@ -154,21 +74,76 @@ export class DemoDataGateway implements DataGateway {
   }
 
   async placeBatchOrder(input: PlaceBatchOrderInput) {
-    return {
+    const selected = this.accounts.filter((item) =>
+      input.accountIds.includes(item.id)
+    );
+    const equity = selected.reduce(
+      (sum, account) => sum + Number(account.equity.amount),
+      0,
+    );
+    const total = input.allocationMode === "fixed_quote"
+      ? Number(input.totalQuoteAmount)
+      : equity * input.allocationPercent / 100;
+    const batch: BatchOrderDto = {
       batchId: `batch_${crypto.randomUUID().replaceAll("-", "").slice(0, 18)}`,
+      symbol: input.symbol,
+      side: input.side,
+      type: input.type,
+      allocationMode: input.allocationMode,
+      allocationPercent: totalEquityPercent(total, equity),
+      ...(input.allocationMode === "fixed_quote"
+        ? { requestedQuoteAmount: money(input.totalQuoteAmount) }
+        : {}),
       submittedAt: new Date().toISOString(),
       results: input.accountIds.map((accountId) => {
         const account = this.accounts.find((item) => item.id === accountId);
-        const allocated = Number(account?.equity.amount ?? 0) *
-          (input.allocationPercent / 100);
+        const allocated = equity === 0
+          ? 0
+          : total * Number(account?.equity.amount ?? 0) / equity;
         return {
           accountId,
           orderId: `mx_${crypto.randomUUID().slice(0, 12)}`,
           status: "accepted" as const,
           allocated: money(allocated.toFixed(2)),
+          filled: money("0"),
+          remaining: money(allocated.toFixed(2)),
         };
       }),
     };
+    this.batches.set(batch.batchId, batch);
+    return batch;
+  }
+
+  async syncBatchOrder(batchId: string) {
+    const batch = this.getBatch(batchId);
+    const updated: BatchOrderDto = {
+      ...batch,
+      results: batch.results.map((result) => result.status === "accepted"
+        ? {
+            ...result,
+            status: "partially_filled",
+            filled: money((Number(result.allocated.amount) / 2).toFixed(2)),
+            remaining: money((Number(result.allocated.amount) / 2).toFixed(2)),
+          }
+        : result),
+    };
+    this.batches.set(batchId, updated);
+    return updated;
+  }
+
+  async cancelBatchOrder(batchId: string, input: CancelBatchOrderInput) {
+    const batch = this.getBatch(batchId);
+    const selected = input.accountIds ? new Set(input.accountIds) : null;
+    const updated: BatchOrderDto = {
+      ...batch,
+      results: batch.results.map((result) =>
+        (!selected || selected.has(result.accountId)) &&
+        ["accepted", "partially_filled"].includes(result.status)
+          ? { ...result, status: "cancelled" as const }
+          : result),
+    };
+    this.batches.set(batchId, updated);
+    return updated;
   }
 
   async listSettlements() {
@@ -201,4 +176,14 @@ export class DemoDataGateway implements DataGateway {
     this.settlements = [settlement, ...this.settlements];
     return settlement;
   }
+
+  private getBatch(batchId: string): BatchOrderDto {
+    const batch = this.batches.get(batchId);
+    if (!batch) throw new Error("Order batch not found");
+    return batch;
+  }
+}
+
+function totalEquityPercent(total: number, equity: number): number {
+  return equity > 0 ? total / equity * 100 : 0;
 }

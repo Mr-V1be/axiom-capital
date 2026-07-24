@@ -12,12 +12,20 @@ interface Props {
   onSubmit(input: ConnectAccountInput): Promise<void>;
 }
 
-const initial: ConnectAccountInput = {
+type AccountDraft = Omit<ConnectAccountInput, "withdrawDisabledConfirmed"> & {
+  withdrawDisabledConfirmed: boolean;
+};
+
+const initial: AccountDraft = {
   label: "",
   investorName: "",
   exchange: "mexc",
+  accountScope: "subaccount",
+  marketType: "swap",
+  externalAccountId: "",
   apiKey: "",
   secret: "",
+  withdrawDisabledConfirmed: false,
 };
 
 export function ConnectAccountModal({
@@ -27,16 +35,19 @@ export function ConnectAccountModal({
   onClose,
   onSubmit,
 }: Props) {
-  const [form, setForm] = useState<ConnectAccountInput>(initial);
+  const [form, setForm] = useState<AccountDraft>(initial);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    await onSubmit(form);
+    if (!form.withdrawDisabledConfirmed) return;
+    await onSubmit({ ...form, withdrawDisabledConfirmed: true });
     setForm(initial);
   };
 
-  const field = (key: keyof ConnectAccountInput) => ({
-    value: form[key],
+  const field = (
+    key: "label" | "investorName" | "externalAccountId" | "apiKey" | "secret",
+  ) => ({
+    value: form[key] ?? "",
     onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
       setForm((current) => ({ ...current, [key]: event.target.value })),
   });
@@ -83,6 +94,40 @@ export function ConnectAccountModal({
             />
           </label>
         </div>
+        <div className="form-grid">
+          <label className="field">
+            <span>Тип подключения</span>
+            <select
+              value={form.accountScope}
+              onChange={(event) => setForm((current) => ({
+                ...current,
+                accountScope: event.target.value as "standalone" | "subaccount",
+              }))}
+            >
+              <option value="subaccount">MEXC subaccount</option>
+              <option value="standalone">Отдельный аккаунт</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>Рынок</span>
+            <select
+              value={form.marketType}
+              onChange={(event) => setForm((current) => ({
+                ...current,
+                marketType: event.target.value as "spot" | "swap",
+              }))}
+            >
+              <option value="swap">USDT-M Futures</option>
+              <option value="spot">Spot</option>
+            </select>
+          </label>
+        </div>
+        {form.accountScope === "subaccount" && (
+          <label className="field">
+            <span>UID / имя субаккаунта</span>
+            <input required placeholder="MEXC subaccount identifier" {...field("externalAccountId")} />
+          </label>
+        )}
         <label className="field">
           <span>API Key</span>
           <div className="field__control">
@@ -116,11 +161,23 @@ export function ConnectAccountModal({
           <div>
             <strong>Обязательные разрешения</strong>
             <p>
-              Чтение и spot-торговля включены. Вывод и внутренние переводы
+              Чтение и торговля включены. Вывод и внутренние переводы
               выключены. Ключ необходимо ограничить IP-адресом сервера.
             </p>
           </div>
         </div>
+        <label className="checkbox-line">
+          <input
+            type="checkbox"
+            required
+            checked={form.withdrawDisabledConfirmed}
+            onChange={(event) => setForm((current) => ({
+              ...current,
+              withdrawDisabledConfirmed: event.target.checked,
+            }))}
+          />
+          <span>Подтверждаю: у API-ключа отключён вывод средств</span>
+        </label>
         {error && <p className="form-error">{error.message}</p>}
       </form>
     </Modal>
