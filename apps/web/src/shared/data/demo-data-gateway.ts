@@ -8,6 +8,7 @@ import type {
 } from "@axiom/contracts";
 import { DataGateway } from "./data-gateway";
 import { demoAccounts, demoNow, demoSettlements } from "./demo-seed";
+import { demoAccountDetails } from "./demo-account-details";
 
 const money = (amount: string, currency = "USDT") => ({ amount, currency });
 
@@ -48,6 +49,12 @@ export class DemoDataGateway implements DataGateway {
 
   async listAccounts() {
     return { items: [...this.accounts] };
+  }
+
+  async getAccountDetails(accountId: string) {
+    const account = this.accounts.find((item) => item.id === accountId);
+    if (!account) throw new Error("Account not found");
+    return demoAccountDetails(account);
   }
 
   async connectAccount(input: ConnectAccountInput) {

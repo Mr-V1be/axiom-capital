@@ -11,11 +11,13 @@ import "./styles/feedback.css";
 import "./styles/forms.css";
 import "./styles/features/dashboard.css";
 import "./styles/features/accounts.css";
+import "./styles/features/account-details.css";
 import "./styles/features/trading.css";
 import "./styles/features/trading/order-ticket.css";
 import "./styles/features/settlements.css";
 import "./styles/responsive/tablet.css";
 import "./styles/responsive/mobile.css";
+import "./styles/responsive/account-details.css";
 
 createRoot(document.getElementById("root")!, {
   onUncaughtError: (error, info) => {

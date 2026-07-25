@@ -1,5 +1,6 @@
 import type {
   AccountListDto,
+  AccountDetailsDto,
   BatchOrderDto,
   CancelBatchOrderInput,
   ConnectAccountInput,
@@ -13,6 +14,10 @@ import type {
 export interface DataGateway {
   getPortfolioOverview(signal?: AbortSignal): Promise<PortfolioOverviewDto>;
   listAccounts(signal?: AbortSignal): Promise<AccountListDto>;
+  getAccountDetails(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<AccountDetailsDto>;
   connectAccount(input: ConnectAccountInput): Promise<InvestorAccountDto>;
   syncAccount(accountId: string): Promise<InvestorAccountDto>;
   placeBatchOrder(input: PlaceBatchOrderInput): Promise<BatchOrderDto>;

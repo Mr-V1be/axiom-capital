@@ -3,6 +3,7 @@ import { PropsWithChildren, ReactNode, useEffect } from "react";
 
 interface ModalProps {
   open: boolean;
+  className?: string;
   title: string;
   description?: string;
   footer?: ReactNode;
@@ -11,6 +12,7 @@ interface ModalProps {
 
 export function Modal({
   open,
+  className,
   title,
   description,
   footer,
@@ -34,7 +36,7 @@ export function Modal({
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
-        className="modal"
+        className={`modal${className ? ` ${className}` : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"

@@ -1,6 +1,7 @@
 import { ConnectAccount } from "../application/accounts/connect-account.js";
 import { AccountConnectionAccess } from "../application/accounts/account-connection-access.js";
 import { ListAccounts } from "../application/accounts/list-accounts.js";
+import { GetAccountDetails } from "../application/accounts/get-account-details.js";
 import { SyncAccountBalance } from "../application/accounts/sync-account-balance.js";
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
@@ -57,6 +58,7 @@ export function createContainer(config: AppConfig) {
         clock,
       ),
       listAccounts: new ListAccounts(accounts, balances),
+      getAccountDetails: new GetAccountDetails(connectionAccess, balances),
       syncAccountBalance: new SyncAccountBalance(
         accounts,
         balances,

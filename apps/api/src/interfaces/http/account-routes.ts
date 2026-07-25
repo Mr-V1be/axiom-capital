@@ -1,5 +1,6 @@
 import {
   AccountListResponse,
+  AccountDetailsResponse,
   ConnectAccountBody,
   InvestorAccount,
   PageQuery,
@@ -8,12 +9,14 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { ConnectAccount } from "../../application/accounts/connect-account.js";
 import { ListAccounts } from "../../application/accounts/list-accounts.js";
+import { GetAccountDetails } from "../../application/accounts/get-account-details.js";
 import { SyncAccountBalance } from "../../application/accounts/sync-account-balance.js";
 import { requestContext } from "./auth-plugin.js";
-import { accountDto } from "./presenters.js";
+import { accountDetailsDto, accountDto } from "./presenters.js";
 
 export interface AccountRouteDependencies {
   connectAccount: ConnectAccount;
+  getAccountDetails: GetAccountDetails;
   listAccounts: ListAccounts;
   syncAccountBalance: SyncAccountBalance;
 }
@@ -61,6 +64,27 @@ export function accountRoutes(
           request.body,
         );
         return reply.status(201).send(accountDto(state, null));
+      },
+    );
+
+    app.get(
+      "/accounts/:accountId/details",
+      {
+        schema: {
+          params: Type.Object({ accountId: Type.String({ minLength: 1 }) }),
+          response: { 200: AccountDetailsResponse },
+        },
+      },
+      async (request) => {
+        const result = await dependencies.getAccountDetails.execute(
+          requestContext(request),
+          request.params.accountId,
+        );
+        return accountDetailsDto(
+          result.account,
+          result.balance,
+          result.details,
+        );
       },
     );
 

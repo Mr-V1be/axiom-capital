@@ -9,6 +9,7 @@ import {
   ExchangeOrderResult,
 } from "../../domain/exchange/exchange-gateway.js";
 import { ExternalServiceError } from "../../domain/shared/domain-error.js";
+import { MexcAccountInspector } from "./mexc-account-inspector.js";
 
 interface MexcAccountInfo {
   canTrade?: boolean;
@@ -69,6 +70,10 @@ export class MexcGateway implements ExchangeGateway {
     } catch (error) {
       throw this.wrap(error, "Unable to fetch open MEXC positions");
     }
+  }
+
+  async fetchAccountDetails(credentials: AccountCredentials) {
+    return new MexcAccountInspector(this.client(credentials)).inspect();
   }
 
   async placeOrder(

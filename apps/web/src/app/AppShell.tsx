@@ -67,7 +67,7 @@ export function AppShell({
           <ShieldCheck size={18} />
           <div>
             <strong>Защищённый режим</strong>
-            <span>Вывод через API отключён</span>
+            <span>Приложение не выполняет вывод</span>
           </div>
         </div>
         <div className="sidebar__profile">

@@ -84,6 +84,9 @@ function fixture() {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
     async fetchOpenPositions() { return 0; },
+    async fetchAccountDetails() {
+      throw new Error("Account details are not used in order lifecycle tests");
+    },
     async placeOrder() {
       throw new Error("Not used");
     },

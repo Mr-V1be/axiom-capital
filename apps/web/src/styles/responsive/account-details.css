@@ -1,0 +1,27 @@
+@media (max-width: 700px) {
+  .details-grid,
+  .capability-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-grid > div,
+  .details-grid > div:nth-child(4n),
+  .capability-grid > div,
+  .capability-grid > div:nth-child(2n) {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .details-grid > div:last-child,
+  .capability-grid > div:last-child {
+    border-bottom: 0;
+  }
+
+  .asset-table > div {
+    grid-template-columns: 70px 1fr;
+  }
+
+  .asset-table b {
+    text-align: left;
+  }
+}

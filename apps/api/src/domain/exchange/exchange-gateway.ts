@@ -35,6 +35,48 @@ export interface ExchangeOrderReference {
   symbol: string;
 }
 
+export type CapabilityState = "available" | "unavailable" | "unknown";
+
+export interface ExchangeCapability {
+  state: CapabilityState;
+  code?: string;
+}
+
+export interface ExchangeAccountDetails {
+  profile: {
+    accountType: string | null;
+    canTrade: boolean | null;
+    canWithdraw: boolean | null;
+    canDeposit: boolean | null;
+    permissions: string[];
+  };
+  kyc: {
+    level: "unverified" | "primary" | "advanced" | "institutional" | "unknown";
+    rawStatus: string | null;
+  };
+  capabilities: {
+    spotAccountRead: ExchangeCapability;
+    spotOrderRead: ExchangeCapability;
+    spotOrderWrite: ExchangeCapability;
+    depositRead: ExchangeCapability;
+    transferRead: ExchangeCapability;
+    withdrawRead: ExchangeCapability;
+    transferWrite: ExchangeCapability;
+    withdrawWrite: ExchangeCapability;
+    futuresAccountRead: ExchangeCapability;
+    futuresOrderRead: ExchangeCapability;
+    futuresOrderWrite: ExchangeCapability;
+  };
+  balances: Array<{
+    asset: string;
+    free: string;
+    locked: string;
+    total: string;
+  }>;
+  allowedSymbols: string[];
+  checkedAt: Date;
+}
+
 export interface ExchangeGateway {
   verifyAccess(
     credentials: AccountCredentials,
@@ -42,6 +84,9 @@ export interface ExchangeGateway {
   ): Promise<void>;
   fetchBalance(credentials: AccountCredentials): Promise<ExchangeBalance>;
   fetchOpenPositions(credentials: AccountCredentials): Promise<number>;
+  fetchAccountDetails(
+    credentials: AccountCredentials,
+  ): Promise<ExchangeAccountDetails>;
   placeOrder(
     credentials: AccountCredentials,
     request: ExchangeOrderRequest,

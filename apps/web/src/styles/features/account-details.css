@@ -1,0 +1,243 @@
+.modal--account-details {
+  width: min(880px, 100%);
+}
+
+.account-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.account-details {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.account-details-state {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.account-details-error,
+.account-details-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+}
+
+.account-details-error {
+  border: 1px solid rgba(255, 125, 125, 0.2);
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+
+.account-details-error div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-details-error strong,
+.account-details-error span {
+  font-size: 11px;
+}
+
+.account-details-error span {
+  color: var(--muted);
+}
+
+.account-details-warning {
+  border: 1px solid rgba(255, 190, 92, 0.2);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.account-details-warning svg {
+  flex: 0 0 auto;
+}
+
+.account-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.account-details-section h3 {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0d1014;
+}
+
+.details-grid > div {
+  min-width: 0;
+  padding: 12px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.details-grid > div:nth-child(4n) {
+  border-right: 0;
+}
+
+.details-grid > div:nth-last-child(-n + 4) {
+  border-bottom: 0;
+}
+
+.details-grid dt {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.details-grid dd {
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capability-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0d1014;
+}
+
+.capability-grid > div {
+  display: flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 11px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.capability-grid > div:nth-child(2n) {
+  border-right: 0;
+}
+
+.capability-grid > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.capability-grid > div > span:first-child {
+  color: var(--text-soft);
+  font-size: 10px;
+}
+
+.capability {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+}
+
+.capability small {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.capability--available {
+  color: var(--positive);
+}
+
+.capability--unavailable {
+  color: var(--negative);
+}
+
+.capability--unknown {
+  color: var(--warning);
+}
+
+.details-note,
+.details-empty {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.asset-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.asset-table > div {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 100px;
+  gap: 12px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #0d1014;
+  font-size: 10px;
+}
+
+.asset-table > div:last-child {
+  border-bottom: 0;
+}
+
+.asset-table span {
+  color: var(--muted);
+}
+
+.asset-table b {
+  color: var(--text);
+  text-align: right;
+}
+
+.symbols-details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0d1014;
+}
+
+.symbols-details summary {
+  padding: 12px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.symbols-details > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
+.symbols-details > div span {
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 8px;
+}

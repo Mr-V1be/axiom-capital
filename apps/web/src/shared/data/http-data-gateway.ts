@@ -1,5 +1,6 @@
 import type {
   AccountListDto,
+  AccountDetailsDto,
   BatchOrderDto,
   CancelBatchOrderInput,
   ConnectAccountInput,
@@ -38,6 +39,13 @@ export class HttpDataGateway implements DataGateway {
     return this.request<AccountListDto>("/v1/accounts", {
       ...(signal ? { signal } : {}),
     });
+  }
+
+  getAccountDetails(accountId: string, signal?: AbortSignal) {
+    return this.request<AccountDetailsDto>(
+      `/v1/accounts/${accountId}/details`,
+      { ...(signal ? { signal } : {}) },
+    );
   }
 
   connectAccount(input: ConnectAccountInput) {

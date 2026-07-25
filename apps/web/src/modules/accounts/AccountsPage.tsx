@@ -1,6 +1,10 @@
-import type { ConnectAccountInput } from "@axiom/contracts";
+import type {
+  ConnectAccountInput,
+  InvestorAccountDto,
+} from "@axiom/contracts";
 import {
   KeyRound,
+  Info,
   Plus,
   RefreshCw,
   Search,
@@ -16,6 +20,7 @@ import { ErrorState, LoadingState } from "../../shared/ui/DataState";
 import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { Toast } from "../../shared/ui/Toast";
 import { ConnectAccountModal } from "./ConnectAccountModal";
+import { AccountDetailsModal } from "./AccountDetailsModal";
 
 export default function AccountsPage() {
   const gateway = useDataGateway();
@@ -28,6 +33,8 @@ export default function AccountsPage() {
   );
   const [search, setSearch] = useState("");
   const [connectOpen, setConnectOpen] = useState(false);
+  const [detailsAccount, setDetailsAccount] =
+    useState<InvestorAccountDto | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const accounts = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -77,7 +84,7 @@ export default function AccountsPage() {
         <span className="security-strip__icon"><ShieldCheck size={20} /></span>
         <div>
           <strong>Безопасный контур активен</strong>
-          <p>Вывод средств отключён на {accounts.length} из {accounts.length} счетов</p>
+          <p>Приложение не выполняет вывод средств со счетов</p>
         </div>
         <span className="security-strip__status">Все проверки пройдены</span>
       </section>
@@ -152,16 +159,27 @@ export default function AccountsPage() {
                     </span>
                   </td>
                   <td>
-                    <button
-                      className="icon-button"
-                      onClick={() => void sync(account.id)}
-                      disabled={syncMutation.status === "loading"}
-                    >
-                      <RefreshCw size={17} />
-                      <span className="visually-hidden">
-                        Синхронизировать баланс
-                      </span>
-                    </button>
+                    <div className="account-row-actions">
+                      <button
+                        className="icon-button"
+                        onClick={() => setDetailsAccount(account)}
+                      >
+                        <Info size={17} />
+                        <span className="visually-hidden">
+                          Подробная информация
+                        </span>
+                      </button>
+                      <button
+                        className="icon-button"
+                        onClick={() => void sync(account.id)}
+                        disabled={syncMutation.status === "loading"}
+                      >
+                        <RefreshCw size={17} />
+                        <span className="visually-hidden">
+                          Синхронизировать баланс
+                        </span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -177,6 +195,12 @@ export default function AccountsPage() {
         onClose={() => setConnectOpen(false)}
         onSubmit={connect}
       />
+      {detailsAccount && (
+        <AccountDetailsModal
+          account={detailsAccount}
+          onClose={() => setDetailsAccount(null)}
+        />
+      )}
       <Toast message={toast} onClose={() => setToast(null)} />
     </div>
   );

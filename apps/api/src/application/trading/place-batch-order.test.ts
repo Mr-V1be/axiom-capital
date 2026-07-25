@@ -82,6 +82,9 @@ function fixture(existing: OrderBatch | null = null) {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
     async fetchOpenPositions() { return 0; },
+    async fetchAccountDetails() {
+      throw new Error("Account details are not used in order placement tests");
+    },
     async placeOrder() {
       assert.equal(reserved, true, "batch must be reserved before execution");
       exchangeCalls += 1;

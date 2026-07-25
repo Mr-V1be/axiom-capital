@@ -61,6 +61,60 @@ export const AccountListResponse = Type.Object({
   nextCursor: Type.Optional(Type.String()),
 });
 
+export const CapabilityState = Type.Union([
+  Type.Literal("available"),
+  Type.Literal("unavailable"),
+  Type.Literal("unknown"),
+]);
+
+const Capability = Type.Object({
+  state: CapabilityState,
+  code: Type.Optional(Type.String()),
+});
+
+export const AccountDetailsResponse = Type.Object({
+  account: InvestorAccount,
+  profile: Type.Object({
+    accountType: Type.Union([Type.String(), Type.Null()]),
+    canTrade: Type.Union([Type.Boolean(), Type.Null()]),
+    canWithdraw: Type.Union([Type.Boolean(), Type.Null()]),
+    canDeposit: Type.Union([Type.Boolean(), Type.Null()]),
+    permissions: Type.Array(Type.String()),
+  }),
+  kyc: Type.Object({
+    level: Type.Union([
+      Type.Literal("unverified"),
+      Type.Literal("primary"),
+      Type.Literal("advanced"),
+      Type.Literal("institutional"),
+      Type.Literal("unknown"),
+    ]),
+    rawStatus: Type.Union([Type.String(), Type.Null()]),
+  }),
+  capabilities: Type.Object({
+    spotAccountRead: Capability,
+    spotOrderRead: Capability,
+    spotOrderWrite: Capability,
+    depositRead: Capability,
+    transferRead: Capability,
+    withdrawRead: Capability,
+    transferWrite: Capability,
+    withdrawWrite: Capability,
+    futuresAccountRead: Capability,
+    futuresOrderRead: Capability,
+    futuresOrderWrite: Capability,
+  }),
+  balances: Type.Array(Type.Object({
+    asset: Type.String(),
+    free: Type.String(),
+    locked: Type.String(),
+    total: Type.String(),
+  })),
+  allowedSymbols: Type.Array(Type.String()),
+  checkedAt: IsoDateTime,
+});
+
 export type InvestorAccountDto = Static<typeof InvestorAccount>;
 export type ConnectAccountInput = Static<typeof ConnectAccountBody>;
 export type AccountListDto = Static<typeof AccountListResponse>;
+export type AccountDetailsDto = Static<typeof AccountDetailsResponse>;

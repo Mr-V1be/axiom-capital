@@ -2,6 +2,7 @@ import { InvestorAccountState } from "../../domain/accounts/investor-account.js"
 import { BalanceSnapshot } from "../../domain/accounts/account-ports.js";
 import { SettlementState } from "../../domain/settlements/settlement.js";
 import { OrderBatchState } from "../../domain/trading/order.js";
+import { ExchangeAccountDetails } from "../../domain/exchange/exchange-gateway.js";
 
 const money = (value: { toString(): string; currency: string }) => ({
   amount: value.toString(),
@@ -37,6 +38,22 @@ export function accountDto(
       ? { lastSyncedAt: account.lastSyncedAt.toISOString() }
       : {}),
     createdAt: account.createdAt.toISOString(),
+  };
+}
+
+export function accountDetailsDto(
+  account: Readonly<InvestorAccountState>,
+  balance: BalanceSnapshot | null,
+  details: ExchangeAccountDetails,
+) {
+  return {
+    account: accountDto(account, balance),
+    profile: details.profile,
+    kyc: details.kyc,
+    capabilities: details.capabilities,
+    balances: details.balances,
+    allowedSymbols: details.allowedSymbols,
+    checkedAt: details.checkedAt.toISOString(),
   };
 }
 
