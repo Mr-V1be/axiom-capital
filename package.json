@@ -5,9 +5,9 @@
   "type": "module",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev -w @axiom/api\" \"npm run dev -w @axiom/web\"",
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run architecture && npm run test --workspaces --if-present",
+    "dev": "npm run build -w @axiom/contracts && concurrently -n api,web -c yellow,cyan \"npm run dev -w @axiom/api\" \"npm run dev -w @axiom/web\"",
+    "build": "npm run build -w @axiom/contracts && npm run build -w @axiom/api && npm run build -w @axiom/web && npm run build -w @axiom/site",
+    "test": "npm run build -w @axiom/contracts && npm run architecture && npm run test --workspaces --if-present",
     "architecture": "tsx scripts/check-architecture.ts",
     "db:generate": "npm run db:generate -w @axiom/api",
     "db:migrate": "npm run db:migrate -w @axiom/api"
