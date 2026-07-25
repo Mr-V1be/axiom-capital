@@ -70,6 +70,7 @@ export class PrismaSettlementRepository
     });
     const hasNext = rows.length > page.limit;
     const items = rows.slice(0, page.limit);
+    const nextCursor = hasNext ? items.at(-1)!.id : null;
     return {
       items: items.map((row: DbSettlement & {
         account: { investorName: string };
@@ -89,7 +90,7 @@ export class PrismaSettlementRepository
         createdAt: row.createdAt,
         ...(row.splitAddress ? { splitAddress: row.splitAddress } : {}),
       })),
-      ...(hasNext ? { nextCursor: items.at(-1)?.id } : {}),
+      ...(nextCursor ? { nextCursor } : {}),
     };
   }
 

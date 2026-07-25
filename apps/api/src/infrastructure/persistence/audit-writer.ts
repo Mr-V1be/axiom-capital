@@ -2,6 +2,7 @@ import {
   AuditWriter,
 } from "../../application/shared/context.js";
 import { IdGenerator } from "../../domain/shared/id.js";
+import { Prisma } from "../../generated/prisma/client.js";
 import { Database } from "./prisma-client.js";
 
 export class PrismaAuditWriter implements AuditWriter {
@@ -19,7 +20,7 @@ export class PrismaAuditWriter implements AuditWriter {
         action: event.action,
         aggregateType: event.aggregateType,
         aggregateId: event.aggregateId,
-        payload: event.payload,
+        payload: event.payload as Prisma.InputJsonValue,
         requestId: event.context.requestId,
         ipAddress: event.context.ipAddress ?? null,
       },
