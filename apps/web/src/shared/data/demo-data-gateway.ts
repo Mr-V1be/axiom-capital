@@ -98,6 +98,37 @@ export class DemoDataGateway implements DataGateway {
     return synchronized;
   }
 
+  async updateAccountAccess(
+    accountId: string,
+    accessMode: "read_only" | "trade",
+  ) {
+    const account = this.accounts.find((item) => item.id === accountId);
+    if (!account) throw new Error("Account not found");
+    const updated = {
+      ...account,
+      accessMode,
+      permissions: {
+        ...account.permissions,
+        trade: accessMode === "trade",
+      },
+    };
+    this.accounts = this.accounts.map((item) =>
+      item.id === accountId ? updated : item
+    );
+    return updated;
+  }
+
+  async getMarketQuote(symbol: string, marketType: "spot" | "swap") {
+    return {
+      symbol,
+      marketType,
+      price: symbol === "BTC/USDT" ? "118420.1" : "3640.25",
+      changePercent24h: 2.84,
+      quoteVolume24h: "2410000000",
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   async placeBatchOrder(input: PlaceBatchOrderInput) {
     const selected = this.accounts.filter((item) =>
       input.accountIds.includes(item.id)

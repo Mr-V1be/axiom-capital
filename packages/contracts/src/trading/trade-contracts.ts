@@ -74,6 +74,27 @@ export const CancelBatchOrderBody = Type.Object({
   accountIds: Type.Optional(Type.Array(EntityId, { minItems: 1, maxItems: 100 })),
 });
 
+export const MarketQuoteQuery = Type.Object({
+  symbol: Type.String({ pattern: "^[A-Z0-9]{2,12}/[A-Z0-9]{2,12}$" }),
+  marketType: Type.Union([
+    Type.Literal("spot"),
+    Type.Literal("swap"),
+  ]),
+});
+
+export const MarketQuoteResponse = Type.Object({
+  symbol: Type.String(),
+  marketType: Type.Union([
+    Type.Literal("spot"),
+    Type.Literal("swap"),
+  ]),
+  price: Type.String(),
+  changePercent24h: Type.Union([Type.Number(), Type.Null()]),
+  quoteVolume24h: Type.Union([Type.String(), Type.Null()]),
+  updatedAt: IsoDateTime,
+});
+
 export type PlaceBatchOrderInput = Static<typeof PlaceBatchOrderBody>;
 export type BatchOrderDto = Static<typeof BatchOrderResponse>;
 export type CancelBatchOrderInput = Static<typeof CancelBatchOrderBody>;
+export type MarketQuoteDto = Static<typeof MarketQuoteResponse>;

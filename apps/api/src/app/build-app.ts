@@ -66,6 +66,7 @@ export async function buildApp(config: AppConfig, container: AppContainer) {
           container.useCases.placeBatchOrder,
           container.useCases.syncBatchOrders,
           container.useCases.cancelBatchOrders,
+          container.useCases.getMarketQuote,
         ),
       );
       await protectedApp.register(

@@ -13,6 +13,12 @@ export class OrderExecutionAccess {
         "account_access_mode",
       );
     }
+    if (state.status !== "connected") {
+      throw new PolicyViolationError(
+        "Only connected accounts can execute orders",
+        "account_connection_status",
+      );
+    }
     return this.access.forAccount(tenantId, accountId);
   }
 }

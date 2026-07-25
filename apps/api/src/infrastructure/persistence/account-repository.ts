@@ -1,5 +1,6 @@
 import {
   AccountProvisioner,
+  AccountAccessUpdater,
   AccountRepository,
   BalanceSnapshot,
 } from "../../domain/accounts/account-ports.js";
@@ -28,7 +29,7 @@ const toDomainStatus: Record<DbAccountStatus, AccountStatus> = {
 };
 
 export class PrismaAccountRepository
-  implements AccountRepository, AccountProvisioner
+  implements AccountRepository, AccountProvisioner, AccountAccessUpdater
 {
   constructor(
     private readonly db: Database,
@@ -108,6 +109,20 @@ export class PrismaAccountRepository
           allowedSymbols: ["BTC/USDT", "ETH/USDT"],
           tradingEnabled: state.accessMode === "trade",
         },
+      }),
+    ]);
+  }
+
+  async updateAccess(account: InvestorAccount): Promise<void> {
+    const state = account.snapshot();
+    await this.db.$transaction([
+      this.db.investorAccount.update({
+        where: { id: state.id },
+        data: { accessMode: state.accessMode },
+      }),
+      this.db.riskProfile.update({
+        where: { accountId: state.id },
+        data: { tradingEnabled: state.accessMode === "trade" },
       }),
     ]);
   }

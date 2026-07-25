@@ -87,6 +87,9 @@ function fixture() {
     async fetchAccountDetails() {
       throw new Error("Account details are not used in order lifecycle tests");
     },
+    async fetchMarketQuote() {
+      throw new Error("Market quote is not used in order lifecycle tests");
+    },
     async placeOrder() {
       throw new Error("Not used");
     },

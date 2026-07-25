@@ -37,6 +37,11 @@
   font-size: 12px;
 }
 
+.market-strip small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
 .market-pair {
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 import type { PlaceBatchOrderInput } from "@axiom/contracts";
-import { Check, CircleDollarSign, RefreshCw, RotateCw, XCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Check, CircleDollarSign, RotateCw, XCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDataGateway } from "../../shared/data/gateway-context";
 import { formatMoney } from "../../shared/format/formatters";
 import { useMutation, useQuery } from "../../shared/hooks/use-async";
@@ -9,6 +9,7 @@ import { Button } from "../../shared/ui/Button";
 import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { Toast } from "../../shared/ui/Toast";
 import { OrderTicket } from "./OrderTicket";
+import { MarketStrip } from "./MarketStrip";
 
 export default function TradingPage() {
   const gateway = useDataGateway();
@@ -23,19 +24,27 @@ export default function TradingPage() {
         : gateway.cancelBatchOrder(input.batchId, {}),
   );
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [symbol, setSymbol] = useState("BTC/USDT");
   const [toast, setToast] = useState<string | null>(null);
+  const selectionInitialized = useRef(false);
 
   useEffect(() => {
-    if (accounts.data && selected.size === 0) {
-      setSelected(
-        new Set(
-          accounts.data.items
-            .filter((account) => account.status === "connected")
-            .map((account) => account.id),
-        ),
-      );
-    }
-  }, [accounts.data, selected.size]);
+    if (!accounts.data) return;
+    const eligible = new Set(
+      accounts.data.items
+        .filter((account) =>
+          account.status === "connected" && account.permissions.trade
+        )
+        .map((account) => account.id),
+    );
+    setSelected((current) => {
+      if (!selectionInitialized.current) {
+        selectionInitialized.current = true;
+        return eligible;
+      }
+      return new Set([...current].filter((id) => eligible.has(id)));
+    });
+  }, [accounts.data]);
 
   const selectedAccounts = useMemo(
     () => (accounts.data?.items ?? []).filter((item) => selected.has(item.id)),
@@ -47,6 +56,11 @@ export default function TradingPage() {
   );
   const marketTypes = new Set(selectedAccounts.map((item) => item.marketType));
   const marketType = selectedAccounts[0]?.marketType;
+  const quote = useQuery(
+    (signal) =>
+      gateway.getMarketQuote(symbol, marketType ?? "spot", signal),
+    [gateway, symbol, marketType],
+  );
   const batch = lifecycle.data?.batchId === order.data?.batchId
     ? lifecycle.data
     : order.data;
@@ -78,19 +92,13 @@ export default function TradingPage() {
   return (
     <div className="trading-layout">
       <section className="trading-main page-stack">
-        <div className="market-strip">
-          <div className="market-pair">
-            <span className="asset-icon">₿</span>
-            <div><strong>BTC / USDT</strong><span>Bitcoin</span></div>
-          </div>
-          <div><span>Цена</span><strong>$118 420,10</strong></div>
-          <div><span>24ч</span><strong className="positive">+2,84%</strong></div>
-          <div><span>Объём 24ч</span><strong>$2,41B</strong></div>
-          <button className="icon-button">
-            <RefreshCw size={16} />
-            <span className="visually-hidden">Обновить котировку</span>
-          </button>
-        </div>
+        <MarketStrip
+          quote={quote.data}
+          loading={quote.status === "loading"}
+          symbol={symbol}
+          onRefresh={() => void quote.refresh()}
+        />
+        {quote.error && <p className="form-error">{quote.error.message}</p>}
 
         <section className="panel">
           <header className="panel__header">
@@ -105,7 +113,8 @@ export default function TradingPage() {
           <div className="account-selector">
             {(accounts.data?.items ?? []).map((account) => {
               const active = selected.has(account.id);
-              const disabled = account.status !== "connected";
+              const disabled =
+                account.status !== "connected" || !account.permissions.trade;
               return (
                 <button
                   key={account.id}
@@ -121,7 +130,10 @@ export default function TradingPage() {
                   </span>
                   <span className="selector-person">
                     <strong>{account.investorName}</strong>
-                    <small>{account.label}</small>
+                    <small>
+                      {account.label} ·{" "}
+                      {account.permissions.trade ? "Trade" : "Read only"}
+                    </small>
                   </span>
                   <strong>{formatMoney(account.equity.amount)}</strong>
                   <StatusBadge status={account.status} />
@@ -184,6 +196,10 @@ export default function TradingPage() {
           marketType={marketType ?? "spot"}
           mixedMarkets={marketTypes.size > 1}
           loading={order.status === "loading"}
+          symbol={symbol}
+          marketPrice={quote.data?.price ?? null}
+          quoteLive={quote.status === "success"}
+          onSymbolChange={setSymbol}
           onSubmit={submit}
         />
         {order.error && <p className="form-error">{order.error.message}</p>}

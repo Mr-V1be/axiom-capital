@@ -42,3 +42,7 @@ export interface AccountProvisioner {
     initialBalance: BalanceSnapshot,
   ): Promise<void>;
 }
+
+export interface AccountAccessUpdater {
+  updateAccess(account: InvestorAccount): Promise<void>;
+}

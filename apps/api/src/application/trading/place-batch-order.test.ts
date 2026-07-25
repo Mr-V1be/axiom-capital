@@ -42,7 +42,7 @@ class SequenceIds implements IdGenerator {
   }
 }
 
-function fixture(existing: OrderBatch | null = null) {
+function fixture(existing: OrderBatch | null = null, equity = "10000") {
   let reserved = false;
   let exchangeCalls = 0;
   const accounts: AccountRepository = {
@@ -57,10 +57,10 @@ function fixture(existing: OrderBatch | null = null) {
     async latest(accountId) {
       return {
         accountId,
-        equity: Money.of(10_000, "USDT"),
+        equity: Money.of(equity, "USDT"),
         pnlToday: Money.of(100, "USDT"),
         pnlTotal: Money.of(500, "USDT"),
-        balances: { USDT: "10000" },
+        balances: { USDT: equity },
         capturedAt: new Date(),
       };
     },
@@ -84,6 +84,9 @@ function fixture(existing: OrderBatch | null = null) {
     async fetchOpenPositions() { return 0; },
     async fetchAccountDetails() {
       throw new Error("Account details are not used in order placement tests");
+    },
+    async fetchMarketQuote() {
+      throw new Error("Market quote is not used in order placement tests");
     },
     async placeOrder() {
       assert.equal(reserved, true, "batch must be reserved before execution");
@@ -183,5 +186,16 @@ describe("PlaceBatchOrder", () => {
     assert.equal(result.id, existing.snapshot().id);
     assert.equal(retry.exchangeCalls(), 0);
     assert.equal(retry.wasReserved(), false);
+  });
+
+  it("blocks zero-equity accounts before reserving or executing", async () => {
+    const test = fixture(null, "0");
+
+    await assert.rejects(
+      test.useCase.execute(context, input),
+      /positive equity/,
+    );
+    assert.equal(test.wasReserved(), false);
+    assert.equal(test.exchangeCalls(), 0);
   });
 });

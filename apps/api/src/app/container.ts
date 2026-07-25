@@ -3,7 +3,9 @@ import { AccountConnectionAccess } from "../application/accounts/account-connect
 import { ListAccounts } from "../application/accounts/list-accounts.js";
 import { GetAccountDetails } from "../application/accounts/get-account-details.js";
 import { SyncAccountBalance } from "../application/accounts/sync-account-balance.js";
+import { UpdateAccountAccess } from "../application/accounts/update-account-access.js";
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
+import { GetMarketQuote } from "../application/market/get-market-quote.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
 import { ListSettlements } from "../application/settlements/list-settlements.js";
 import { CancelBatchOrders } from "../application/trading/cancel-batch-orders.js";
@@ -67,7 +69,13 @@ export function createContainer(config: AppConfig) {
         ids,
         clock,
       ),
+      updateAccountAccess: new UpdateAccountAccess(
+        connectionAccess,
+        accounts,
+        audit,
+      ),
       getPortfolioOverview: new GetPortfolioOverview(accounts, balances, clock),
+      getMarketQuote: new GetMarketQuote(exchanges.for("mexc")),
       placeBatchOrder: new PlaceBatchOrder(
         accounts,
         balances,

@@ -4,6 +4,7 @@ import {
   ConnectAccountBody,
   InvestorAccount,
   PageQuery,
+  UpdateAccountAccessBody,
 } from "@axiom/contracts";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
@@ -11,6 +12,7 @@ import { ConnectAccount } from "../../application/accounts/connect-account.js";
 import { ListAccounts } from "../../application/accounts/list-accounts.js";
 import { GetAccountDetails } from "../../application/accounts/get-account-details.js";
 import { SyncAccountBalance } from "../../application/accounts/sync-account-balance.js";
+import { UpdateAccountAccess } from "../../application/accounts/update-account-access.js";
 import { requestContext } from "./auth-plugin.js";
 import { accountDetailsDto, accountDto } from "./presenters.js";
 
@@ -19,6 +21,7 @@ export interface AccountRouteDependencies {
   getAccountDetails: GetAccountDetails;
   listAccounts: ListAccounts;
   syncAccountBalance: SyncAccountBalance;
+  updateAccountAccess: UpdateAccountAccess;
 }
 
 export function accountRoutes(
@@ -47,6 +50,25 @@ export function accountRoutes(
           ),
           ...(result.nextCursor ? { nextCursor: result.nextCursor } : {}),
         };
+      },
+    );
+
+    app.patch(
+      "/accounts/:accountId/access",
+      {
+        schema: {
+          params: Type.Object({ accountId: Type.String({ minLength: 1 }) }),
+          body: UpdateAccountAccessBody,
+          response: { 200: InvestorAccount },
+        },
+      },
+      async (request) => {
+        const state = await dependencies.updateAccountAccess.execute(
+          requestContext(request),
+          request.params.accountId,
+          request.body,
+        );
+        return accountDto(state, null);
       },
     );
 

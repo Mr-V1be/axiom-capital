@@ -56,6 +56,10 @@ export const ConnectAccountBody = Type.Object({
   withdrawDisabledConfirmed: Type.Literal(true),
 });
 
+export const UpdateAccountAccessBody = Type.Object({
+  accessMode: AccountAccessMode,
+});
+
 export const AccountListResponse = Type.Object({
   items: Type.Array(InvestorAccount),
   nextCursor: Type.Optional(Type.String()),
@@ -116,5 +120,6 @@ export const AccountDetailsResponse = Type.Object({
 
 export type InvestorAccountDto = Static<typeof InvestorAccount>;
 export type ConnectAccountInput = Static<typeof ConnectAccountBody>;
+export type UpdateAccountAccessInput = Static<typeof UpdateAccountAccessBody>;
 export type AccountListDto = Static<typeof AccountListResponse>;
 export type AccountDetailsDto = Static<typeof AccountDetailsResponse>;

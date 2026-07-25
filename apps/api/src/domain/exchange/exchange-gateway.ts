@@ -77,6 +77,15 @@ export interface ExchangeAccountDetails {
   checkedAt: Date;
 }
 
+export interface ExchangeMarketQuote {
+  symbol: string;
+  marketType: "spot" | "swap";
+  price: string;
+  changePercent24h: number | null;
+  quoteVolume24h: string | null;
+  updatedAt: Date;
+}
+
 export interface ExchangeGateway {
   verifyAccess(
     credentials: AccountCredentials,
@@ -87,6 +96,10 @@ export interface ExchangeGateway {
   fetchAccountDetails(
     credentials: AccountCredentials,
   ): Promise<ExchangeAccountDetails>;
+  fetchMarketQuote(
+    symbol: string,
+    marketType: "spot" | "swap",
+  ): Promise<ExchangeMarketQuote>;
   placeOrder(
     credentials: AccountCredentials,
     request: ExchangeOrderRequest,

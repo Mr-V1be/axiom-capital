@@ -1,8 +1,9 @@
 import type { PlaceBatchOrderInput } from "@axiom/contracts";
 import { AlertTriangle, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { formatMoney } from "../../shared/format/formatters";
 import { Button } from "../../shared/ui/Button";
+import { validateOrder } from "./order-validation";
 
 interface Props {
   accountIds: readonly string[];
@@ -10,6 +11,10 @@ interface Props {
   marketType?: "spot" | "swap";
   mixedMarkets: boolean;
   loading: boolean;
+  symbol: string;
+  marketPrice: string | null;
+  quoteLive: boolean;
+  onSymbolChange(symbol: string): void;
   onSubmit(input: PlaceBatchOrderInput): Promise<void>;
 }
 
@@ -19,32 +24,49 @@ export function OrderTicket({
   marketType,
   mixedMarkets,
   loading,
+  symbol,
+  marketPrice,
+  quoteLive,
+  onSymbolChange,
   onSubmit,
 }: Props) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [type, setType] = useState<"market" | "limit">("limit");
-  const [symbol, setSymbol] = useState("BTC/USDT");
   const [allocationMode, setAllocationMode] = useState<
     "equity_percentage" | "fixed_quote"
   >("fixed_quote");
   const [allocation, setAllocation] = useState(5);
-  const [fixedAmount, setFixedAmount] = useState("1000");
-  const [price, setPrice] = useState("118420");
+  const [fixedAmount, setFixedAmount] = useState("");
+  const [price, setPrice] = useState("");
   const [leverage, setLeverage] = useState(1);
+  useEffect(() => {
+    if (marketPrice) setPrice(marketPrice);
+  }, [marketPrice, symbol]);
+  useEffect(() => {
+    if (!fixedAmount && totalEquity > 0) {
+      setFixedAmount(String(Math.min(totalEquity * 0.05, 1_000)));
+    }
+  }, [fixedAmount, totalEquity]);
   const amount = useMemo(
     () => allocationMode === "fixed_quote"
       ? Number(fixedAmount)
       : totalEquity * (allocation / 100),
     [allocationMode, allocation, fixedAmount, totalEquity],
   );
-  const valid = accountIds.length > 0 && !mixedMarkets && amount > 0 &&
-    amount <= totalEquity && (
-      allocationMode === "fixed_quote" || allocation <= 10
-    );
+  const validation = validateOrder({
+    accountCount: accountIds.length,
+    totalEquity,
+    mixedMarkets,
+    amount,
+    allocationMode,
+    allocationPercent: allocation,
+    type,
+    limitPrice: Number(price),
+  });
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!valid) return;
+    if (!validation.valid) return;
     const common = {
       idempotencyKey: crypto.randomUUID(),
       accountIds: [...accountIds],
@@ -73,7 +95,7 @@ export function OrderTicket({
         </div>
         <span className="live-indicator">
           <i />
-          {import.meta.env.VITE_DATA_MODE === "api" ? "MEXC live" : "Demo mode"}
+          {quoteLive ? "MEXC live" : "Нет котировки"}
         </span>
       </header>
       <div className="side-switcher">
@@ -94,7 +116,10 @@ export function OrderTicket({
       </div>
       <label className="field">
         <span>Торговая пара</span>
-        <select value={symbol} onChange={(event) => setSymbol(event.target.value)}>
+        <select
+          value={symbol}
+          onChange={(event) => onSymbolChange(event.target.value)}
+        >
           <option>BTC/USDT</option>
           <option>ETH/USDT</option>
         </select>
@@ -178,25 +203,25 @@ export function OrderTicket({
           <strong>{accountIds.length}</strong>
         </div>
       </div>
-      <div className={`risk-check ${valid ? "" : "risk-check--warning"}`}>
-        {valid ? <ShieldCheck size={19} /> : <AlertTriangle size={19} />}
+      <div className={`risk-check ${validation.valid ? "" : "risk-check--warning"}`}>
+        {validation.valid
+          ? <ShieldCheck size={19} />
+          : <AlertTriangle size={19} />}
         <div>
-          <strong>{valid ? "Pre-trade проверка пройдена" : "Проверьте параметры"}</strong>
-          <span>
-            {valid
-              ? "Сумма распределится пропорционально equity выбранных счетов"
-              : mixedMarkets
-                ? "Нельзя смешивать spot и futures в одной пакетной заявке"
-                : "Выберите счёт и проверьте лимит распределения"}
-          </span>
+          <strong>
+            {validation.valid
+              ? "Pre-trade проверка пройдена"
+              : "Сделка заблокирована"}
+          </strong>
+          <span>{validation.message}</span>
         </div>
-        {valid && <CheckCircle2 size={17} />}
+        {validation.valid && <CheckCircle2 size={17} />}
       </div>
       <Button
         variant="primary"
         className="order-ticket__submit"
         loading={loading}
-        disabled={!valid}
+        disabled={!validation.valid}
       >
         <Zap size={16} />
         Отправить на {accountIds.length} счёта

@@ -67,6 +67,15 @@ export class InvestorAccount {
     this.state = { ...this.state, status: "disabled" };
   }
 
+  changeAccessMode(accessMode: AccountAccessMode): void {
+    if (this.state.status === "disabled") {
+      throw new InvalidAccountError(
+        "Disabled account access mode cannot be changed",
+      );
+    }
+    this.state = { ...this.state, accessMode };
+  }
+
   snapshot(): Readonly<InvestorAccountState> {
     return Object.freeze({ ...this.state });
   }

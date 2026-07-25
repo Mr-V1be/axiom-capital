@@ -10,6 +10,7 @@ import {
 } from "../../domain/exchange/exchange-gateway.js";
 import { ExternalServiceError } from "../../domain/shared/domain-error.js";
 import { MexcAccountInspector } from "./mexc-account-inspector.js";
+import { MexcMarketData } from "./mexc-market-data.js";
 
 interface MexcAccountInfo {
   canTrade?: boolean;
@@ -34,8 +35,11 @@ export class MexcGateway implements ExchangeGateway {
       const exchange = this.client(credentials);
       const balance = await exchange.fetchBalance();
       const info = balance.info as MexcAccountInfo;
-      if (accessMode === "trade" && info.canTrade === false) {
-        throw new Error("Trading permission is required");
+      if (accessMode === "trade") {
+        if (info.canTrade === false) {
+          throw new Error("Trading permission is required");
+        }
+        await this.verifyTradePermission(exchange, credentials.marketType);
       }
     } catch (error) {
       throw this.wrap(error, "Unable to verify MEXC API permissions");
@@ -74,6 +78,10 @@ export class MexcGateway implements ExchangeGateway {
 
   async fetchAccountDetails(credentials: AccountCredentials) {
     return new MexcAccountInspector(this.client(credentials)).inspect();
+  }
+
+  async fetchMarketQuote(symbol: string, marketType: "spot" | "swap") {
+    return new MexcMarketData().fetchQuote(symbol, marketType);
   }
 
   async placeOrder(
@@ -200,6 +208,24 @@ export class MexcGateway implements ExchangeGateway {
     const quote = symbol.split("/")[1];
     if (!quote) throw new Error(`Invalid swap symbol: ${symbol}`);
     return `${symbol}:${quote}`;
+  }
+
+  private async verifyTradePermission(
+    exchange: mexc,
+    marketType: "spot" | "swap",
+  ): Promise<void> {
+    if (marketType === "swap") {
+      await exchange.contractPrivateGetPositionPositionMode();
+      return;
+    }
+    await exchange.spotPrivatePostOrderTest({
+      symbol: "BTCUSDT",
+      side: "BUY",
+      type: "LIMIT",
+      timeInForce: "GTC",
+      quantity: "0.001",
+      price: "10000",
+    });
   }
 
   private wrap(error: unknown, message: string): ExternalServiceError {

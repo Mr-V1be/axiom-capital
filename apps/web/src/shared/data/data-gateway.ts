@@ -6,6 +6,7 @@ import type {
   ConnectAccountInput,
   CreateSettlementInput,
   InvestorAccountDto,
+  MarketQuoteDto,
   PlaceBatchOrderInput,
   PortfolioOverviewDto,
   SettlementDto,
@@ -20,6 +21,15 @@ export interface DataGateway {
   ): Promise<AccountDetailsDto>;
   connectAccount(input: ConnectAccountInput): Promise<InvestorAccountDto>;
   syncAccount(accountId: string): Promise<InvestorAccountDto>;
+  updateAccountAccess(
+    accountId: string,
+    accessMode: "read_only" | "trade",
+  ): Promise<InvestorAccountDto>;
+  getMarketQuote(
+    symbol: string,
+    marketType: "spot" | "swap",
+    signal?: AbortSignal,
+  ): Promise<MarketQuoteDto>;
   placeBatchOrder(input: PlaceBatchOrderInput): Promise<BatchOrderDto>;
   syncBatchOrder(batchId: string): Promise<BatchOrderDto>;
   cancelBatchOrder(

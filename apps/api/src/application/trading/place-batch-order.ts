@@ -47,6 +47,14 @@ export class PlaceBatchOrder {
       return { account, balance };
     });
     this.assertCompatibleAccounts(loaded, input);
+    if (loaded.some(({ balance }) =>
+      new Decimal(balance.equity.toString()).lessThanOrEqualTo(0)
+    )) {
+      throw new PolicyViolationError(
+        "Selected accounts must have positive equity",
+        "account_equity",
+      );
+    }
 
     const allocationRequest = input.allocationMode === "fixed_quote"
       ? { mode: "fixed_quote" as const, totalQuoteAmount: input.totalQuoteAmount }

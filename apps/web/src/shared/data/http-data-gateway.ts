@@ -6,6 +6,7 @@ import type {
   ConnectAccountInput,
   CreateSettlementInput,
   InvestorAccountDto,
+  MarketQuoteDto,
   PlaceBatchOrderInput,
   PortfolioOverviewDto,
   SettlementDto,
@@ -59,6 +60,31 @@ export class HttpDataGateway implements DataGateway {
     return this.request<InvestorAccountDto>(`/v1/accounts/${accountId}/sync`, {
       method: "POST",
     });
+  }
+
+  updateAccountAccess(
+    accountId: string,
+    accessMode: "read_only" | "trade",
+  ) {
+    return this.request<InvestorAccountDto>(
+      `/v1/accounts/${accountId}/access`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ accessMode }),
+      },
+    );
+  }
+
+  getMarketQuote(
+    symbol: string,
+    marketType: "spot" | "swap",
+    signal?: AbortSignal,
+  ) {
+    const query = new URLSearchParams({ symbol, marketType });
+    return this.request<MarketQuoteDto>(
+      `/v1/markets/quote?${query.toString()}`,
+      { ...(signal ? { signal } : {}) },
+    );
   }
 
   placeBatchOrder(input: PlaceBatchOrderInput) {

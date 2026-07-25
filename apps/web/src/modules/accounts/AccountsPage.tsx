@@ -198,6 +198,9 @@ export default function AccountsPage() {
       {detailsAccount && (
         <AccountDetailsModal
           account={detailsAccount}
+          onUpdated={async () => {
+            await query.refresh();
+          }}
           onClose={() => setDetailsAccount(null)}
         />
       )}
