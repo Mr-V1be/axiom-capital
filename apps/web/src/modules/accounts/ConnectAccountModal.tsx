@@ -3,6 +3,11 @@ import { KeyRound, LockKeyhole, ShieldCheck } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Button } from "../../shared/ui/Button";
 import { Modal } from "../../shared/ui/Modal";
+import {
+  AccountDraft,
+  initialAccountDraft,
+  toConnectAccountInput,
+} from "./account-form";
 
 interface Props {
   open: boolean;
@@ -12,23 +17,6 @@ interface Props {
   onSubmit(input: ConnectAccountInput): Promise<void>;
 }
 
-type AccountDraft = Omit<ConnectAccountInput, "withdrawDisabledConfirmed"> & {
-  withdrawDisabledConfirmed: boolean;
-};
-
-const initial: AccountDraft = {
-  label: "",
-  investorName: "",
-  exchange: "mexc",
-  accountScope: "subaccount",
-  marketType: "spot",
-  accessMode: "read_only",
-  externalAccountId: "",
-  apiKey: "",
-  secret: "",
-  withdrawDisabledConfirmed: false,
-};
-
 export function ConnectAccountModal({
   open,
   loading,
@@ -36,13 +24,13 @@ export function ConnectAccountModal({
   onClose,
   onSubmit,
 }: Props) {
-  const [form, setForm] = useState<AccountDraft>(initial);
+  const [form, setForm] = useState<AccountDraft>(initialAccountDraft);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!form.withdrawDisabledConfirmed) return;
-    await onSubmit({ ...form, withdrawDisabledConfirmed: true });
-    setForm(initial);
+    await onSubmit(toConnectAccountInput(form));
+    setForm(initialAccountDraft);
   };
 
   const field = (
