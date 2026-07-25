@@ -71,7 +71,10 @@ export function OrderTicket({
           <span className="eyebrow">Ордер</span>
           <h2>Параметры сделки</h2>
         </div>
-        <span className="live-indicator"><i /> MEXC live</span>
+        <span className="live-indicator">
+          <i />
+          {import.meta.env.VITE_DATA_MODE === "api" ? "MEXC live" : "Demo mode"}
+        </span>
       </header>
       <div className="side-switcher">
         <button

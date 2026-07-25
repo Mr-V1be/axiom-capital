@@ -16,6 +16,7 @@ import {
   RiskPolicy,
 } from "../../domain/trading/trading-ports.js";
 import { AuditWriter, SecretCipher } from "../shared/context.js";
+import { AccountConnectionAccess } from "../accounts/account-connection-access.js";
 import { OrderExecutionAccess } from "./order-execution-access.js";
 import { PlaceBatchOrder } from "./place-batch-order.js";
 
@@ -27,6 +28,7 @@ const account = InvestorAccount.create({
   exchange: "mexc",
   accountScope: "standalone",
   marketType: "spot",
+  accessMode: "trade",
   status: "connected",
   encryptedKey: "encrypted-key",
   encryptedSecret: "encrypted-secret",
@@ -75,7 +77,7 @@ function fixture(existing: OrderBatch | null = null) {
     async update() {},
   };
   const gateway: ExchangeGateway = {
-    async verifyReadTradeOnly() {},
+    async verifyAccess() {},
     async fetchBalance() {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
@@ -126,7 +128,7 @@ function fixture(existing: OrderBatch | null = null) {
     accounts,
     balances,
     orders,
-    new OrderExecutionAccess(accounts, factory, cipher),
+    new OrderExecutionAccess(new AccountConnectionAccess(accounts, factory, cipher)),
     new ProportionalAllocationStrategy(),
     risk,
     scheduler,

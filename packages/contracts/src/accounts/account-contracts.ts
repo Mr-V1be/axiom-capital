@@ -10,6 +10,10 @@ export const MarketType = Type.Union([
   Type.Literal("spot"),
   Type.Literal("swap"),
 ]);
+export const AccountAccessMode = Type.Union([
+  Type.Literal("read_only"),
+  Type.Literal("trade"),
+]);
 export const AccountStatus = Type.Union([
   Type.Literal("pending"),
   Type.Literal("connected"),
@@ -24,6 +28,7 @@ export const InvestorAccount = Type.Object({
   exchange: ExchangeName,
   accountScope: AccountScope,
   marketType: MarketType,
+  accessMode: AccountAccessMode,
   externalAccountId: Type.Optional(Type.String({ minLength: 2, maxLength: 128 })),
   status: AccountStatus,
   equity: Money,
@@ -44,6 +49,7 @@ export const ConnectAccountBody = Type.Object({
   exchange: ExchangeName,
   accountScope: AccountScope,
   marketType: MarketType,
+  accessMode: AccountAccessMode,
   externalAccountId: Type.Optional(Type.String({ minLength: 2, maxLength: 128 })),
   apiKey: Type.String({ minLength: 16, maxLength: 256 }),
   secret: Type.String({ minLength: 16, maxLength: 256 }),

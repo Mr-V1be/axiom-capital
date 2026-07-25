@@ -1,33 +1,18 @@
-import { AccountRepository } from "../../domain/accounts/account-ports.js";
-import { ExchangeGatewayFactory } from "../../domain/exchange/exchange-gateway.js";
-import { NotFoundError } from "../../domain/shared/domain-error.js";
-import { SecretCipher } from "../shared/context.js";
+import { AccountConnectionAccess } from "../accounts/account-connection-access.js";
+import { PolicyViolationError } from "../../domain/shared/domain-error.js";
 
 export class OrderExecutionAccess {
-  constructor(
-    private readonly accounts: AccountRepository,
-    private readonly exchanges: ExchangeGatewayFactory,
-    private readonly cipher: SecretCipher,
-  ) {}
+  constructor(private readonly access: AccountConnectionAccess) {}
 
   async forAccount(tenantId: string, accountId: string) {
-    const account = await this.accounts.findById(tenantId, accountId);
-    if (!account) throw new NotFoundError("InvestorAccount", accountId);
+    const account = await this.access.findAccount(tenantId, accountId);
     const state = account.snapshot();
-    const [apiKey, secret] = await Promise.all([
-      this.cipher.decrypt(state.encryptedKey),
-      this.cipher.decrypt(state.encryptedSecret),
-    ]);
-    return {
-      gateway: this.exchanges.for(state.exchange),
-      credentials: {
-        apiKey,
-        secret,
-        marketType: state.marketType,
-        ...(state.externalAccountId
-          ? { externalAccountId: state.externalAccountId }
-          : {}),
-      },
-    };
+    if (state.accessMode !== "trade") {
+      throw new PolicyViolationError(
+        "Read-only accounts cannot execute orders",
+        "account_access_mode",
+      );
+    }
+    return this.access.forAccount(tenantId, accountId);
   }
 }

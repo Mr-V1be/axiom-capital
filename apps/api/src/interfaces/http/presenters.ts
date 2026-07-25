@@ -20,6 +20,7 @@ export function accountDto(
     exchange: account.exchange,
     accountScope: account.accountScope,
     marketType: account.marketType,
+    accessMode: account.accessMode,
     ...(account.externalAccountId
       ? { externalAccountId: account.externalAccountId }
       : {}),
@@ -27,7 +28,11 @@ export function accountDto(
     equity: balance ? money(balance.equity) : { amount: "0", currency },
     pnlToday: balance ? money(balance.pnlToday) : { amount: "0", currency },
     pnlTotal: balance ? money(balance.pnlTotal) : { amount: "0", currency },
-    permissions: { read: true, trade: true, withdraw: false as const },
+    permissions: {
+      read: true,
+      trade: account.accessMode === "trade",
+      withdraw: false as const,
+    },
     ...(account.lastSyncedAt
       ? { lastSyncedAt: account.lastSyncedAt.toISOString() }
       : {}),

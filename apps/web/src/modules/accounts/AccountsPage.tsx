@@ -1,8 +1,8 @@
 import type { ConnectAccountInput } from "@axiom/contracts";
 import {
   KeyRound,
-  MoreHorizontal,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -22,6 +22,9 @@ export default function AccountsPage() {
   const query = useQuery((signal) => gateway.listAccounts(signal), [gateway]);
   const mutation = useMutation((input: ConnectAccountInput) =>
     gateway.connectAccount(input),
+  );
+  const syncMutation = useMutation((accountId: string) =>
+    gateway.syncAccount(accountId),
   );
   const [search, setSearch] = useState("");
   const [connectOpen, setConnectOpen] = useState(false);
@@ -48,14 +51,20 @@ export default function AccountsPage() {
     await query.refresh();
   };
 
+  const sync = async (accountId: string) => {
+    await syncMutation.execute(accountId);
+    setToast("Баланс синхронизирован с MEXC");
+    await query.refresh();
+  };
+
   return (
     <div className="page-stack">
       <section className="page-intro">
         <div>
           <h2>Подключённые счета</h2>
           <p>
-            Балансы остаются на стороне инвесторов. Axiom имеет только права
-            чтения и торговли.
+            Балансы остаются на стороне инвесторов. Права каждого подключения
+            ограничиваются выбранным режимом доступа.
           </p>
         </div>
         <Button variant="primary" onClick={() => setConnectOpen(true)}>
@@ -139,13 +148,19 @@ export default function AccountsPage() {
                   <td>
                     <span className="permission-chip">
                       <KeyRound size={13} />
-                      Trade only
+                      {account.permissions.trade ? "Trade only" : "Read only"}
                     </span>
                   </td>
                   <td>
-                    <button className="icon-button">
-                      <MoreHorizontal size={17} />
-                      <span className="visually-hidden">Действия</span>
+                    <button
+                      className="icon-button"
+                      onClick={() => void sync(account.id)}
+                      disabled={syncMutation.status === "loading"}
+                    >
+                      <RefreshCw size={17} />
+                      <span className="visually-hidden">
+                        Синхронизировать баланс
+                      </span>
                     </button>
                   </td>
                 </tr>

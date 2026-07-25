@@ -8,12 +8,14 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { ConnectAccount } from "../../application/accounts/connect-account.js";
 import { ListAccounts } from "../../application/accounts/list-accounts.js";
+import { SyncAccountBalance } from "../../application/accounts/sync-account-balance.js";
 import { requestContext } from "./auth-plugin.js";
 import { accountDto } from "./presenters.js";
 
 export interface AccountRouteDependencies {
   connectAccount: ConnectAccount;
   listAccounts: ListAccounts;
+  syncAccountBalance: SyncAccountBalance;
 }
 
 export function accountRoutes(
@@ -59,6 +61,23 @@ export function accountRoutes(
           request.body,
         );
         return reply.status(201).send(accountDto(state, null));
+      },
+    );
+
+    app.post(
+      "/accounts/:accountId/sync",
+      {
+        schema: {
+          params: Type.Object({ accountId: Type.String({ minLength: 1 }) }),
+          response: { 200: InvestorAccount },
+        },
+      },
+      async (request) => {
+        const result = await dependencies.syncAccountBalance.execute(
+          requestContext(request),
+          request.params.accountId,
+        );
+        return accountDto(result.account, result.balance);
       },
     );
 

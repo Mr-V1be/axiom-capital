@@ -14,6 +14,7 @@ export interface DataGateway {
   getPortfolioOverview(signal?: AbortSignal): Promise<PortfolioOverviewDto>;
   listAccounts(signal?: AbortSignal): Promise<AccountListDto>;
   connectAccount(input: ConnectAccountInput): Promise<InvestorAccountDto>;
+  syncAccount(accountId: string): Promise<InvestorAccountDto>;
   placeBatchOrder(input: PlaceBatchOrderInput): Promise<BatchOrderDto>;
   syncBatchOrder(batchId: string): Promise<BatchOrderDto>;
   cancelBatchOrder(

@@ -1,10 +1,12 @@
 import "dotenv/config";
 import { buildApp } from "./app/build-app.js";
+import { bootstrapOwner } from "./app/bootstrap-owner.js";
 import { createContainer } from "./app/container.js";
 import { loadConfig } from "./infrastructure/config/app-config.js";
 
 const config = loadConfig();
 const container = createContainer(config);
+await bootstrapOwner(container.db, config);
 const app = await buildApp(config, container);
 
 const shutdown = async (signal: NodeJS.Signals) => {

@@ -58,6 +58,7 @@ export class DemoDataGateway implements DataGateway {
       exchange: input.exchange,
       accountScope: input.accountScope,
       marketType: input.marketType,
+      accessMode: input.accessMode,
       ...(input.externalAccountId
         ? { externalAccountId: input.externalAccountId }
         : {}),
@@ -65,12 +66,29 @@ export class DemoDataGateway implements DataGateway {
       equity: money("0"),
       pnlToday: money("0"),
       pnlTotal: money("0"),
-      permissions: { read: true, trade: true, withdraw: false },
+      permissions: {
+        read: true,
+        trade: input.accessMode === "trade",
+        withdraw: false,
+      },
       lastSyncedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     };
     this.accounts = [account, ...this.accounts];
     return account;
+  }
+
+  async syncAccount(accountId: string) {
+    const account = this.accounts.find((item) => item.id === accountId);
+    if (!account) throw new Error("Account not found");
+    const synchronized = {
+      ...account,
+      lastSyncedAt: new Date().toISOString(),
+    };
+    this.accounts = this.accounts.map((item) =>
+      item.id === accountId ? synchronized : item
+    );
+    return synchronized;
   }
 
   async placeBatchOrder(input: PlaceBatchOrderInput) {

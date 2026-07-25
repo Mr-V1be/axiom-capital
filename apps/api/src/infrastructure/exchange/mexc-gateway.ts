@@ -1,6 +1,7 @@
 import ccxt, { mexc } from "ccxt";
 import { Decimal } from "decimal.js";
 import { AccountCredentials } from "../../domain/accounts/account-ports.js";
+import { AccountAccessMode } from "../../domain/accounts/investor-account.js";
 import {
   ExchangeGateway,
   ExchangeGatewayFactory,
@@ -24,14 +25,16 @@ export class MexcGateway implements ExchangeGateway {
     });
   }
 
-  async verifyReadTradeOnly(credentials: AccountCredentials): Promise<void> {
+  async verifyAccess(
+    credentials: AccountCredentials,
+    accessMode: AccountAccessMode,
+  ): Promise<void> {
     try {
       const exchange = this.client(credentials);
       const balance = await exchange.fetchBalance();
       const info = balance.info as MexcAccountInfo;
-      if (info.canTrade === false) throw new Error("Trading permission is required");
-      if (info.canWithdraw === true) {
-        throw new Error("Withdrawal permission must be explicitly disabled");
+      if (accessMode === "trade" && info.canTrade === false) {
+        throw new Error("Trading permission is required");
       }
     } catch (error) {
       throw this.wrap(error, "Unable to verify MEXC API permissions");

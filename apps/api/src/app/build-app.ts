@@ -56,7 +56,7 @@ export async function buildApp(config: AppConfig, container: AppContainer) {
 
   await app.register(
     async (protectedApp) => {
-      await protectedApp.register(authPlugin(config.jwtSecret));
+      await protectedApp.register(authPlugin(config.auth));
       await protectedApp.register(accountRoutes(container.useCases));
       await protectedApp.register(
         portfolioRoutes(container.useCases.getPortfolioOverview),

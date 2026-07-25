@@ -4,7 +4,15 @@ export interface AppConfig {
   port: number;
   webOrigin: string;
   databaseUrl: string;
-  jwtSecret: string;
+  auth:
+    | { mode: "jwt"; jwtSecret: string }
+    | {
+        mode: "basic";
+        username: string;
+        password: string;
+        tenantId: string;
+        actorId: string;
+      };
   encryptionKey: string;
 }
 
@@ -24,13 +32,26 @@ export function loadConfig(): AppConfig {
     throw new Error("API_PORT must be a valid TCP port");
   }
 
+  const authMode = process.env.AUTH_MODE ?? "jwt";
+  if (!["jwt", "basic"].includes(authMode)) {
+    throw new Error(`Unsupported AUTH_MODE: ${authMode}`);
+  }
+
   return {
     environment: environment as AppConfig["environment"],
     host: process.env.API_HOST ?? "0.0.0.0",
     port,
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
     databaseUrl: required("DATABASE_URL"),
-    jwtSecret: required("JWT_SECRET"),
+    auth: authMode === "basic"
+      ? {
+          mode: "basic",
+          username: required("BASIC_AUTH_USERNAME"),
+          password: required("BASIC_AUTH_PASSWORD"),
+          tenantId: required("BASIC_AUTH_TENANT_ID"),
+          actorId: required("BASIC_AUTH_ACTOR_ID"),
+        }
+      : { mode: "jwt", jwtSecret: required("JWT_SECRET") },
     encryptionKey: required("KEY_ENCRYPTION_KEY"),
   };
 }

@@ -35,7 +35,7 @@ export class ConnectAccount {
         : {}),
     };
     const gateway = this.exchanges.for(input.exchange);
-    await gateway.verifyReadTradeOnly(credentials);
+    await gateway.verifyAccess(credentials, input.accessMode);
     const balance = await gateway.fetchBalance(credentials);
     const now = this.clock.now();
 
@@ -52,6 +52,7 @@ export class ConnectAccount {
       exchange: input.exchange,
       accountScope: input.accountScope,
       marketType: input.marketType,
+      accessMode: input.accessMode,
       ...(input.externalAccountId
         ? { externalAccountId: input.externalAccountId }
         : {}),
@@ -79,6 +80,7 @@ export class ConnectAccount {
         exchange: input.exchange,
         accountScope: input.accountScope,
         marketType: input.marketType,
+        accessMode: input.accessMode,
         withdrawalDisabled: input.withdrawDisabledConfirmed,
       },
     });

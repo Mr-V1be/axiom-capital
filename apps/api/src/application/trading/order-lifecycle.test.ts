@@ -7,6 +7,7 @@ import {
   ExchangeGatewayFactory,
 } from "../../domain/exchange/exchange-gateway.js";
 import { Money } from "../../domain/shared/money.js";
+import { AccountConnectionAccess } from "../accounts/account-connection-access.js";
 import { Order, OrderBatch } from "../../domain/trading/order.js";
 import {
   ExecutionScheduler,
@@ -25,6 +26,7 @@ const account = InvestorAccount.create({
   exchange: "mexc",
   accountScope: "subaccount",
   marketType: "swap",
+  accessMode: "trade",
   externalAccountId: "investor-main",
   status: "connected",
   encryptedKey: "key",
@@ -77,7 +79,7 @@ function fixture() {
     async update() { updates += 1; },
   };
   const gateway: ExchangeGateway = {
-    async verifyReadTradeOnly() {},
+    async verifyAccess() {},
     async fetchBalance() {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
@@ -105,10 +107,12 @@ function fixture() {
     },
   };
   const factory: ExchangeGatewayFactory = { for: () => gateway };
-  const access = new OrderExecutionAccess(accounts, factory, {
-    async encrypt(value) { return value; },
-    async decrypt(value) { return value; },
-  });
+  const access = new OrderExecutionAccess(
+    new AccountConnectionAccess(accounts, factory, {
+      async encrypt(value) { return value; },
+      async decrypt(value) { return value; },
+    }),
+  );
   const scheduler: ExecutionScheduler = {
     async map(items, task) {
       const result = [];

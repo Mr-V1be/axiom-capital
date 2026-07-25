@@ -64,6 +64,7 @@ model InvestorAccount {
   exchange       String
   accountScope   String          @default("standalone")
   marketType     String          @default("spot")
+  accessMode     String          @default("read_only")
   externalAccountId String?
   status         AccountStatus
   encryptedKey   String

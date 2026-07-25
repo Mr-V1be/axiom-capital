@@ -22,6 +22,7 @@ const account = InvestorAccount.create({
   exchange: "mexc",
   accountScope: "subaccount",
   marketType: "swap",
+  accessMode: "trade",
   externalAccountId: "investor-main",
   status: "connected",
   encryptedKey: "key",

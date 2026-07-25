@@ -4,6 +4,7 @@ export type AccountStatus = "pending" | "connected" | "degraded" | "disabled";
 export type ExchangeName = "mexc";
 export type AccountScope = "standalone" | "subaccount";
 export type MarketType = "spot" | "swap";
+export type AccountAccessMode = "read_only" | "trade";
 
 export interface InvestorAccountState {
   id: string;
@@ -13,6 +14,7 @@ export interface InvestorAccountState {
   exchange: ExchangeName;
   accountScope: AccountScope;
   marketType: MarketType;
+  accessMode: AccountAccessMode;
   externalAccountId?: string;
   status: AccountStatus;
   encryptedKey: string;

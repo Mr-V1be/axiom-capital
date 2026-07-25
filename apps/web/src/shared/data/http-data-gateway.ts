@@ -47,6 +47,12 @@ export class HttpDataGateway implements DataGateway {
     });
   }
 
+  syncAccount(accountId: string) {
+    return this.request<InvestorAccountDto>(`/v1/accounts/${accountId}/sync`, {
+      method: "POST",
+    });
+  }
+
   placeBatchOrder(input: PlaceBatchOrderInput) {
     return this.request<BatchOrderDto>("/v1/orders/batch", {
       method: "POST",

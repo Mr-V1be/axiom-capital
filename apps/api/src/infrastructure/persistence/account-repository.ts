@@ -77,6 +77,7 @@ export class PrismaAccountRepository
           exchange: state.exchange,
           accountScope: state.accountScope,
           marketType: state.marketType,
+          accessMode: state.accessMode,
           externalAccountId: state.externalAccountId ?? null,
           status: toDbStatus[state.status],
           encryptedKey: state.encryptedKey,
@@ -105,6 +106,7 @@ export class PrismaAccountRepository
           maxDailyLossPct: 3,
           maxOpenPositions: 5,
           allowedSymbols: ["BTC/USDT", "ETH/USDT"],
+          tradingEnabled: state.accessMode === "trade",
         },
       }),
     ]);
@@ -133,6 +135,7 @@ export class PrismaAccountRepository
     exchange: string;
     accountScope: string;
     marketType: string;
+    accessMode: string;
     externalAccountId: string | null;
     status: DbAccountStatus;
     encryptedKey: string;
@@ -149,6 +152,7 @@ export class PrismaAccountRepository
       accountScope:
         row.accountScope === "subaccount" ? "subaccount" : "standalone",
       marketType: row.marketType === "swap" ? "swap" : "spot",
+      accessMode: row.accessMode === "trade" ? "trade" : "read_only",
       ...(row.externalAccountId
         ? { externalAccountId: row.externalAccountId }
         : {}),

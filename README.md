@@ -33,6 +33,18 @@ The hosted UI uses a deterministic demo gateway. Real MEXC execution requires
 trade-only, withdrawal-disabled API keys and an IP allowlist. Real Splits
 funding requires a verified current-generation contract configuration.
 
+## Connection modes
+
+- `read_only` verifies private account access and stores encrypted credentials,
+  but the execution boundary rejects every order attempt for that account.
+- `trade` permits order execution after account-level risk checks. Withdrawal
+  and transfer capabilities are outside the platform's exchange gateway.
+
+Production can place both the static application and `/api` behind HTTP Basic
+authentication by setting `AUTH_MODE=basic`. The API independently validates
+the same credentials; Nginx protection is not treated as the sole trust
+boundary.
+
 ## Local development
 
 1. Copy `.env.example` to `.env`.

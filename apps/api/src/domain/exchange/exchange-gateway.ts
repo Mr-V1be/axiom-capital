@@ -1,5 +1,8 @@
 import { AccountCredentials } from "../accounts/account-ports.js";
-import { ExchangeName } from "../accounts/investor-account.js";
+import {
+  AccountAccessMode,
+  ExchangeName,
+} from "../accounts/investor-account.js";
 
 export interface ExchangeBalance {
   currency: string;
@@ -33,7 +36,10 @@ export interface ExchangeOrderReference {
 }
 
 export interface ExchangeGateway {
-  verifyReadTradeOnly(credentials: AccountCredentials): Promise<void>;
+  verifyAccess(
+    credentials: AccountCredentials,
+    accessMode: AccountAccessMode,
+  ): Promise<void>;
   fetchBalance(credentials: AccountCredentials): Promise<ExchangeBalance>;
   fetchOpenPositions(credentials: AccountCredentials): Promise<number>;
   placeOrder(

@@ -21,7 +21,8 @@ const initial: AccountDraft = {
   investorName: "",
   exchange: "mexc",
   accountScope: "subaccount",
-  marketType: "swap",
+  marketType: "spot",
+  accessMode: "read_only",
   externalAccountId: "",
   apiKey: "",
   secret: "",
@@ -96,6 +97,19 @@ export function ConnectAccountModal({
         </div>
         <div className="form-grid">
           <label className="field">
+            <span>Режим доступа</span>
+            <select
+              value={form.accessMode}
+              onChange={(event) => setForm((current) => ({
+                ...current,
+                accessMode: event.target.value as "read_only" | "trade",
+              }))}
+            >
+              <option value="read_only">Только чтение</option>
+              <option value="trade">Чтение и торговля</option>
+            </select>
+          </label>
+          <label className="field">
             <span>Тип подключения</span>
             <select
               value={form.accountScope}
@@ -161,8 +175,11 @@ export function ConnectAccountModal({
           <div>
             <strong>Обязательные разрешения</strong>
             <p>
-              Чтение и торговля включены. Вывод и внутренние переводы
-              выключены. Ключ необходимо ограничить IP-адресом сервера.
+              {form.accessMode === "read_only"
+                ? "Включите только чтение счёта."
+                : "Включите чтение счёта и торговлю."} Вывод и внутренние
+              переводы должны быть выключены. Ограничьте ключ IP-адресом
+              сервера.
             </p>
           </div>
         </div>

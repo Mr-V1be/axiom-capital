@@ -1,5 +1,7 @@
 import { ConnectAccount } from "../application/accounts/connect-account.js";
+import { AccountConnectionAccess } from "../application/accounts/account-connection-access.js";
 import { ListAccounts } from "../application/accounts/list-accounts.js";
+import { SyncAccountBalance } from "../application/accounts/sync-account-balance.js";
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
 import { ListSettlements } from "../application/settlements/list-settlements.js";
@@ -39,7 +41,8 @@ export function createContainer(config: AppConfig) {
   const audit = new PrismaAuditWriter(db, ids);
   const exchanges = new DefaultExchangeGatewayFactory(new MexcGateway());
   const scheduler = new BoundedExecutionScheduler(5);
-  const executionAccess = new OrderExecutionAccess(accounts, exchanges, cipher);
+  const connectionAccess = new AccountConnectionAccess(accounts, exchanges, cipher);
+  const executionAccess = new OrderExecutionAccess(connectionAccess);
 
   return {
     db,
@@ -54,6 +57,14 @@ export function createContainer(config: AppConfig) {
         clock,
       ),
       listAccounts: new ListAccounts(accounts, balances),
+      syncAccountBalance: new SyncAccountBalance(
+        accounts,
+        balances,
+        connectionAccess,
+        audit,
+        ids,
+        clock,
+      ),
       getPortfolioOverview: new GetPortfolioOverview(accounts, balances, clock),
       placeBatchOrder: new PlaceBatchOrder(
         accounts,
