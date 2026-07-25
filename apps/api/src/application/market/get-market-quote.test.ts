@@ -5,7 +5,10 @@ import { GetMarketQuote } from "./get-market-quote.js";
 
 it("returns a normalized quote from the configured exchange", async () => {
   const gateway = {
-    async fetchMarketQuote(symbol, marketType) {
+    async fetchMarketQuote(
+      symbol: string,
+      marketType: "spot" | "swap",
+    ) {
       return {
         symbol,
         marketType,
