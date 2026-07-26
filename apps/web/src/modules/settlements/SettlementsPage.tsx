@@ -42,21 +42,17 @@ export default function SettlementsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  if (
-    (settlements.status === "loading" && !settlements.data) ||
-    (accounts.status === "loading" && !accounts.data) ||
-    (splits.status === "loading" && !splits.data)
-  ) {
-    return <LoadingState label="Проверяем расчёты и onchain-статусы" />;
-  }
   if (settlements.error) {
     return <ErrorState error={settlements.error} retry={settlements.refresh} />;
   }
   if (accounts.error) {
     return <ErrorState error={accounts.error} retry={accounts.refresh} />;
   }
-  if (splits.error || !splits.data) {
-    return <ErrorState error={splits.error!} retry={splits.refresh} />;
+  if (splits.error) {
+    return <ErrorState error={splits.error} retry={splits.refresh} />;
+  }
+  if (!settlements.data || !accounts.data || !splits.data) {
+    return <LoadingState label="Проверяем расчёты и onchain-статусы" />;
   }
 
   const create = async (input: CreateSettlementInput) => {
