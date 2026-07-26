@@ -73,6 +73,8 @@ export async function buildApp(config: AppConfig, container: AppContainer) {
         settlementRoutes(
           container.useCases.createSettlement,
           container.useCases.listSettlements,
+          container.useCases.getSplitOverview,
+          container.useCases.provisionTestSplit,
         ),
       );
     },

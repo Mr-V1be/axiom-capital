@@ -9,7 +9,10 @@ import type {
   MarketQuoteDto,
   PlaceBatchOrderInput,
   PortfolioOverviewDto,
+  ProvisionTestSplitInput,
   SettlementDto,
+  SplitConfigurationDto,
+  SplitOverviewDto,
 } from "@axiom/contracts";
 
 export interface DataGateway {
@@ -38,4 +41,9 @@ export interface DataGateway {
   ): Promise<BatchOrderDto>;
   listSettlements(signal?: AbortSignal): Promise<{ items: SettlementDto[] }>;
   createSettlement(input: CreateSettlementInput): Promise<SettlementDto>;
+  getSplitOverview(signal?: AbortSignal): Promise<SplitOverviewDto>;
+  provisionTestSplit(
+    accountId: string,
+    input: ProvisionTestSplitInput,
+  ): Promise<SplitConfigurationDto>;
 }

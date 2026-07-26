@@ -1,0 +1,154 @@
+.split-testnet {
+  overflow: hidden;
+}
+
+.split-network {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.split-network > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.split-network.is-ready {
+  color: var(--positive);
+}
+
+.split-network.is-ready > span {
+  background: var(--positive);
+  box-shadow: 0 0 8px rgba(114, 230, 160, 0.6);
+}
+
+.split-testnet__facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+
+.split-testnet__facts > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-right: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.split-testnet__facts > div:last-child {
+  border-right: 0;
+}
+
+.split-testnet__facts span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.split-testnet__facts strong {
+  color: var(--text);
+  font-size: 10px;
+}
+
+.split-testnet__accounts {
+  display: flex;
+  flex-direction: column;
+}
+
+.split-testnet__accounts article {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) 1.1fr 150px 120px;
+  min-height: 64px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.split-testnet__accounts article > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.split-testnet__accounts article > div:first-child strong {
+  font-size: 11px;
+}
+
+.split-testnet__accounts article > div:first-child span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.split-testnet__accounts article > .button {
+  grid-column: 4;
+}
+
+.split-testnet__share {
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.split-verified {
+  color: var(--positive);
+  font-size: 9px;
+  text-align: right;
+}
+
+.split-testnet .form-error {
+  margin: 12px 18px 0;
+}
+
+.split-testnet__notice {
+  padding: 12px 18px;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .split-testnet__accounts article {
+    grid-template-columns: 1fr auto;
+  }
+
+  .split-testnet__share,
+  .split-testnet__accounts .address-button {
+    display: none;
+  }
+
+  .split-testnet__accounts article > .button {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 620px) {
+  .split-testnet__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .split-testnet__facts > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .split-testnet__accounts article {
+    grid-template-columns: 1fr;
+  }
+
+  .split-testnet__accounts article > .button,
+  .split-verified {
+    grid-column: 1;
+    justify-self: start;
+    text-align: left;
+  }
+}

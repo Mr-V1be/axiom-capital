@@ -21,10 +21,65 @@ export interface SplitAddressBook {
   ): Promise<VerifiedSplitConfiguration | null>;
 }
 
-export interface VerifiedSplitConfiguration {
+export interface SplitConfigurationState {
+  id: string;
+  accountId: string;
   address: string;
   chainId: number;
+  networkName: string;
+  environment: "testnet" | "mainnet";
+  investorAddress: string;
+  traderAddress: string;
   traderSharePercent: number;
+  splitType: "push" | "pull";
+  protocolVersion: string;
+  deploymentTxHash?: string;
   immutable: true;
   verifiedAt: Date;
+  createdAt: Date;
+}
+
+export type VerifiedSplitConfiguration = Pick<
+  SplitConfigurationState,
+  "address" | "chainId" | "traderSharePercent" | "immutable" | "verifiedAt"
+>;
+
+export interface SplitConfigurationRepository extends SplitAddressBook {
+  findByAccount(accountId: string): Promise<SplitConfigurationState | null>;
+  listByTenant(tenantId: string): Promise<SplitConfigurationState[]>;
+  save(configuration: SplitConfigurationState): Promise<void>;
+}
+
+export interface SplitNetworkStatus {
+  mode: "disabled" | "test_fork";
+  connected: boolean;
+  factoryDeployed: boolean;
+  chainId?: number;
+  networkName?: string;
+  blockNumber?: string;
+  signerAddress?: string;
+  signerBalanceWei?: string;
+}
+
+export interface ProvisionedSplit {
+  chainId: number;
+  networkName: string;
+  environment: "testnet";
+  address: string;
+  investorAddress: string;
+  traderAddress: string;
+  traderSharePercent: number;
+  splitType: "push";
+  protocolVersion: string;
+  deploymentTxHash?: string;
+  verifiedAt: Date;
+}
+
+export interface SplitProvisioningGateway {
+  status(): Promise<SplitNetworkStatus>;
+  provision(input: {
+    tenantId: string;
+    accountId: string;
+    traderSharePercent: number;
+  }): Promise<ProvisionedSplit>;
 }

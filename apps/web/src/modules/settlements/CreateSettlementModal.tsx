@@ -1,4 +1,8 @@
-import type { CreateSettlementInput, InvestorAccountDto } from "@axiom/contracts";
+import type {
+  CreateSettlementInput,
+  InvestorAccountDto,
+  SplitConfigurationDto,
+} from "@axiom/contracts";
 import { Calculator, ShieldCheck } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { formatMoney } from "../../shared/format/formatters";
@@ -8,6 +12,7 @@ import { Modal } from "../../shared/ui/Modal";
 interface Props {
   open: boolean;
   accounts: readonly InvestorAccountDto[];
+  splitConfigurations: readonly SplitConfigurationDto[];
   loading: boolean;
   error: Error | null;
   onClose(): void;
@@ -17,6 +22,7 @@ interface Props {
 export function CreateSettlementModal({
   open,
   accounts,
+  splitConfigurations,
   loading,
   error,
   onClose,
@@ -28,8 +34,12 @@ export function CreateSettlementModal({
     () => accounts.find((item) => item.id === accountId) ?? accounts[0],
     [accounts, accountId],
   );
+  const split = splitConfigurations.find(
+    (item) => item.accountId === account?.id,
+  );
+  const effectiveShare = split?.traderSharePercent ?? share;
   const profit = Math.max(0, Number(account?.pnlTotal.amount ?? 0));
-  const trader = profit * (share / 100);
+  const trader = profit * (effectiveShare / 100);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -37,7 +47,7 @@ export function CreateSettlementModal({
     await onSubmit({
       accountId: account.id,
       periodEnd: new Date().toISOString(),
-      traderSharePercent: share,
+      traderSharePercent: effectiveShare,
     });
   };
 
@@ -83,7 +93,8 @@ export function CreateSettlementModal({
               type="number"
               min={0}
               max={50}
-              value={share}
+              value={effectiveShare}
+              disabled={Boolean(split)}
               onChange={(event) => setShare(Number(event.target.value))}
             />
             <span>%</span>
@@ -95,8 +106,8 @@ export function CreateSettlementModal({
             <strong>{formatMoney(profit)}</strong>
           </div>
           <div className="split-bar">
-            <span style={{ width: `${100 - share}%` }} />
-            <i style={{ width: `${share}%` }} />
+            <span style={{ width: `${100 - effectiveShare}%` }} />
+            <i style={{ width: `${effectiveShare}%` }} />
           </div>
           <div className="split-preview__shares">
             <span>Инвестор <strong>{formatMoney(profit - trader)}</strong></span>
@@ -108,8 +119,9 @@ export function CreateSettlementModal({
           <div>
             <strong>High-water mark защищает инвестора</strong>
             <p>
-              Если капитал не превысил прошлый максимум, вознаграждение
-              управляющего не начисляется.
+              {split
+                ? `Доля ${effectiveShare}% зафиксирована проверенным Split.`
+                : "Без Split доля применяется только к расчёту."}
             </p>
           </div>
         </div>

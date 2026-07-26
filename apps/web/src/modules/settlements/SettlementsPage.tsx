@@ -20,6 +20,7 @@ import { ErrorState, LoadingState } from "../../shared/ui/DataState";
 import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { Toast } from "../../shared/ui/Toast";
 import { CreateSettlementModal } from "./CreateSettlementModal";
+import { SplitTestnetPanel } from "./SplitTestnetPanel";
 
 export default function SettlementsPage() {
   const gateway = useDataGateway();
@@ -28,15 +29,23 @@ export default function SettlementsPage() {
     [gateway],
   );
   const accounts = useQuery((signal) => gateway.listAccounts(signal), [gateway]);
+  const splits = useQuery(
+    (signal) => gateway.getSplitOverview(signal),
+    [gateway],
+  );
   const mutation = useMutation((input: CreateSettlementInput) =>
     gateway.createSettlement(input),
+  );
+  const provision = useMutation((accountId: string) =>
+    gateway.provisionTestSplit(accountId, { traderSharePercent: 20 }),
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   if (
     (settlements.status === "loading" && !settlements.data) ||
-    (accounts.status === "loading" && !accounts.data)
+    (accounts.status === "loading" && !accounts.data) ||
+    (splits.status === "loading" && !splits.data)
   ) {
     return <LoadingState label="Проверяем расчёты и onchain-статусы" />;
   }
@@ -46,6 +55,9 @@ export default function SettlementsPage() {
   if (accounts.error) {
     return <ErrorState error={accounts.error} retry={accounts.refresh} />;
   }
+  if (splits.error || !splits.data) {
+    return <ErrorState error={splits.error!} retry={splits.refresh} />;
+  }
 
   const create = async (input: CreateSettlementInput) => {
     await mutation.execute(input);
@@ -54,6 +66,11 @@ export default function SettlementsPage() {
     await settlements.refresh();
   };
   const items = settlements.data?.items ?? [];
+  const provisionSplit = async (accountId: string) => {
+    await provision.execute(accountId);
+    await splits.refresh();
+    setToast("Тестовый Split создан и проверен on-chain");
+  };
   const awaiting = items
     .filter((item) => item.status === "awaiting_investor")
     .reduce((sum, item) => sum + Number(item.grossProfit.amount), 0);
@@ -91,10 +108,18 @@ export default function SettlementsPage() {
         </div>
         <div>
           <span>Активных Split</span>
-          <strong>{items.filter((item) => item.splitAddress).length}</strong>
-          <small>Immutable · Base network</small>
+          <strong>{splits.data.items.length}</strong>
+          <small>Immutable · {splits.data.network.networkName}</small>
         </div>
       </section>
+
+      <SplitTestnetPanel
+        accounts={accounts.data?.items ?? []}
+        overview={splits.data}
+        loading={provision.status === "loading"}
+        error={provision.error}
+        onProvision={provisionSplit}
+      />
 
       <section className="settlement-flow panel">
         <div>
@@ -190,6 +215,7 @@ export default function SettlementsPage() {
       <CreateSettlementModal
         open={modalOpen}
         accounts={accounts.data?.items ?? []}
+        splitConfigurations={splits.data.items}
         loading={mutation.status === "loading"}
         error={mutation.error}
         onClose={() => setModalOpen(false)}

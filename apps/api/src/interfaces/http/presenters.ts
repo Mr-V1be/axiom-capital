@@ -1,6 +1,7 @@
 import { InvestorAccountState } from "../../domain/accounts/investor-account.js";
 import { BalanceSnapshot } from "../../domain/accounts/account-ports.js";
 import { SettlementState } from "../../domain/settlements/settlement.js";
+import { SplitConfigurationState } from "../../domain/settlements/settlement-ports.js";
 import { OrderBatchState } from "../../domain/trading/order.js";
 import { ExchangeAccountDetails } from "../../domain/exchange/exchange-gateway.js";
 
@@ -100,5 +101,27 @@ export function settlementDto(state: Readonly<SettlementState>) {
     ...(state.splitAddress ? { splitAddress: state.splitAddress } : {}),
     status: state.status,
     createdAt: state.createdAt.toISOString(),
+  };
+}
+
+export function splitConfigurationDto(
+  state: Readonly<SplitConfigurationState>,
+) {
+  return {
+    accountId: state.accountId,
+    chainId: state.chainId,
+    networkName: state.networkName,
+    environment: state.environment,
+    address: state.address,
+    immutable: true as const,
+    investorAddress: state.investorAddress,
+    traderAddress: state.traderAddress,
+    traderSharePercent: state.traderSharePercent,
+    splitType: state.splitType,
+    protocolVersion: state.protocolVersion,
+    ...(state.deploymentTxHash
+      ? { deploymentTxHash: state.deploymentTxHash }
+      : {}),
+    verifiedAt: state.verifiedAt.toISOString(),
   };
 }

@@ -1,7 +1,6 @@
 import { Money } from "../../domain/shared/money.js";
 import {
   SettlementRepository,
-  SplitAddressBook,
 } from "../../domain/settlements/settlement-ports.js";
 import {
   Settlement,
@@ -19,9 +18,7 @@ const toDbStatus: Record<SettlementStatus, DbStatus> = {
   cancelled: "CANCELLED",
 };
 
-export class PrismaSettlementRepository
-  implements SettlementRepository, SplitAddressBook
-{
+export class PrismaSettlementRepository implements SettlementRepository {
   constructor(private readonly db: Database) {}
 
   async latestAnchor(accountId: string) {
@@ -94,24 +91,4 @@ export class PrismaSettlementRepository
     };
   }
 
-  async getVerifiedConfiguration(accountId: string) {
-    const row = await this.db.splitConfiguration.findFirst({
-      where: { accountId, immutable: true, verifiedAt: { not: null } },
-      select: {
-        address: true,
-        chainId: true,
-        traderSharePct: true,
-        immutable: true,
-        verifiedAt: true,
-      },
-    });
-    if (!row?.verifiedAt || !row.immutable) return null;
-    return {
-      address: row.address,
-      chainId: row.chainId,
-      traderSharePercent: Number(row.traderSharePct),
-      immutable: true as const,
-      verifiedAt: row.verifiedAt,
-    };
-  }
 }

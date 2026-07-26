@@ -2,20 +2,22 @@ import type {
   BatchOrderDto,
   CancelBatchOrderInput,
   ConnectAccountInput,
+  CreateSettlementInput,
   InvestorAccountDto,
   PlaceBatchOrderInput,
-  SettlementDto,
+  ProvisionTestSplitInput,
 } from "@axiom/contracts";
 import { DataGateway } from "./data-gateway";
-import { demoAccounts, demoNow, demoSettlements } from "./demo-seed";
+import { demoAccounts, demoNow } from "./demo-seed";
 import { demoAccountDetails } from "./demo-account-details";
+import { DemoSettlementGateway } from "./demo-settlement-gateway";
 
 const money = (amount: string, currency = "USDT") => ({ amount, currency });
 
 export class DemoDataGateway implements DataGateway {
   private accounts = [...demoAccounts];
-  private settlements = [...demoSettlements];
   private batches = new Map<string, BatchOrderDto>();
+  private readonly settlementGateway = new DemoSettlementGateway();
 
   async getPortfolioOverview() {
     const equity = this.accounts.reduce(
@@ -203,34 +205,22 @@ export class DemoDataGateway implements DataGateway {
   }
 
   async listSettlements() {
-    return { items: [...this.settlements] };
+    return this.settlementGateway.list();
   }
 
-  async createSettlement(input: {
-    accountId: string;
-    periodEnd: string;
-    traderSharePercent: number;
-  }) {
-    const account = this.accounts.find((item) => item.id === input.accountId);
-    if (!account) throw new Error("Account not found");
-    const gross = Math.max(0, Number(account.pnlTotal.amount));
-    const trader = gross * (input.traderSharePercent / 100);
-    const settlement: SettlementDto = {
-      id: `set_${crypto.randomUUID().replaceAll("-", "").slice(0, 20)}`,
-      accountId: account.id,
-      investorName: account.investorName,
-      periodStart: account.createdAt,
-      periodEnd: input.periodEnd,
-      grossProfit: money(gross.toFixed(2)),
-      investorShare: money((gross - trader).toFixed(2)),
-      traderShare: money(trader.toFixed(2)),
-      traderSharePercent: input.traderSharePercent,
-      highWaterMark: account.equity,
-      status: "calculated",
-      createdAt: new Date().toISOString(),
-    };
-    this.settlements = [settlement, ...this.settlements];
-    return settlement;
+  async createSettlement(input: CreateSettlementInput) {
+    return this.settlementGateway.create(input, this.accounts);
+  }
+
+  async getSplitOverview() {
+    return this.settlementGateway.overview();
+  }
+
+  async provisionTestSplit(
+    accountId: string,
+    input: ProvisionTestSplitInput,
+  ) {
+    return this.settlementGateway.provision(accountId, input);
   }
 
   private getBatch(batchId: string): BatchOrderDto {

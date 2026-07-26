@@ -98,15 +98,22 @@ model BalanceSnapshot {
 }
 
 model SplitConfiguration {
-  id             String          @id
-  accountId      String          @unique
-  chainId        Int
-  address        String
-  immutable      Boolean
-  traderSharePct Decimal         @db.Decimal(5, 2)
-  verifiedAt     DateTime?
-  createdAt      DateTime        @default(now())
-  account        InvestorAccount @relation(fields: [accountId], references: [id])
+  id               String          @id
+  accountId        String          @unique
+  chainId          Int
+  networkName      String
+  environment      String
+  address          String
+  immutable        Boolean
+  investorAddress  String
+  traderAddress    String
+  traderSharePct   Decimal         @db.Decimal(5, 2)
+  splitType        String
+  protocolVersion  String
+  deploymentTxHash String?
+  verifiedAt       DateTime?
+  createdAt        DateTime        @default(now())
+  account          InvestorAccount @relation(fields: [accountId], references: [id])
 }
 
 model RiskProfile {

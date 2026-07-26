@@ -9,7 +9,10 @@ import type {
   MarketQuoteDto,
   PlaceBatchOrderInput,
   PortfolioOverviewDto,
+  ProvisionTestSplitInput,
   SettlementDto,
+  SplitConfigurationDto,
+  SplitOverviewDto,
 } from "@axiom/contracts";
 import { SessionStore } from "../auth/session-store";
 import { DataGateway } from "./data-gateway";
@@ -118,6 +121,22 @@ export class HttpDataGateway implements DataGateway {
       method: "POST",
       body: JSON.stringify(input),
     });
+  }
+
+  getSplitOverview(signal?: AbortSignal) {
+    return this.request<SplitOverviewDto>("/v1/splits", {
+      ...(signal ? { signal } : {}),
+    });
+  }
+
+  provisionTestSplit(
+    accountId: string,
+    input: ProvisionTestSplitInput,
+  ) {
+    return this.request<SplitConfigurationDto>(
+      `/v1/accounts/${encodeURIComponent(accountId)}/split/testnet`,
+      { method: "POST", body: JSON.stringify(input) },
+    );
   }
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {

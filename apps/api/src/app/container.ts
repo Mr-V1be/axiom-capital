@@ -7,7 +7,9 @@ import { UpdateAccountAccess } from "../application/accounts/update-account-acce
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { GetMarketQuote } from "../application/market/get-market-quote.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
+import { GetSplitOverview } from "../application/settlements/get-split-overview.js";
 import { ListSettlements } from "../application/settlements/list-settlements.js";
+import { ProvisionTestSplit } from "../application/settlements/provision-test-split.js";
 import { CancelBatchOrders } from "../application/trading/cancel-batch-orders.js";
 import { OrderExecutionAccess } from "../application/trading/order-execution-access.js";
 import { PlaceBatchOrder } from "../application/trading/place-batch-order.js";
@@ -30,6 +32,9 @@ import { createPrismaClient } from "../infrastructure/persistence/prisma-client.
 import { PrismaRiskProfileRepository } from "../infrastructure/persistence/risk-repository.js";
 import { PrismaSettlementRepository } from "../infrastructure/persistence/settlement-repository.js";
 import { AesGcmSecretCipher } from "../infrastructure/security/aes-secret-cipher.js";
+import { DisabledSplitGateway } from "../infrastructure/splits/disabled-split-gateway.js";
+import { PrismaSplitConfigurationRepository } from "../infrastructure/splits/prisma-split-repository.js";
+import { SplitsV2TestForkGateway } from "../infrastructure/splits/splits-v2-gateway.js";
 
 export function createContainer(config: AppConfig) {
   const db = createPrismaClient(config.databaseUrl);
@@ -41,6 +46,10 @@ export function createContainer(config: AppConfig) {
   const riskProfiles = new PrismaRiskProfileRepository(db, ids);
   const orders = new PrismaOrderRepository(db);
   const settlements = new PrismaSettlementRepository(db);
+  const splitConfigurations = new PrismaSplitConfigurationRepository(db);
+  const splits = config.splits.mode === "test_fork"
+    ? new SplitsV2TestForkGateway(config.splits)
+    : new DisabledSplitGateway();
   const audit = new PrismaAuditWriter(db, ids);
   const exchanges = new DefaultExchangeGatewayFactory(new MexcGateway());
   const scheduler = new BoundedExecutionScheduler(5);
@@ -106,12 +115,21 @@ export function createContainer(config: AppConfig) {
         accounts,
         balances,
         settlements,
-        settlements,
+        splitConfigurations,
         audit,
         ids,
         clock,
       ),
       listSettlements: new ListSettlements(settlements),
+      getSplitOverview: new GetSplitOverview(splitConfigurations, splits),
+      provisionTestSplit: new ProvisionTestSplit(
+        accounts,
+        splitConfigurations,
+        splits,
+        audit,
+        ids,
+        clock,
+      ),
     },
   };
 }

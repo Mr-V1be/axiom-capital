@@ -36,6 +36,55 @@ export const SettlementListResponse = Type.Object({
   nextCursor: Type.Optional(Type.String()),
 });
 
+const EvmAddress = Type.String({ pattern: "^0x[a-fA-F0-9]{40}$" });
+const TransactionHash = Type.String({ pattern: "^0x[a-fA-F0-9]{64}$" });
+
+export const SplitConfiguration = Type.Object({
+  accountId: EntityId,
+  chainId: Type.Integer({ minimum: 1 }),
+  networkName: Type.String(),
+  environment: Type.Union([
+    Type.Literal("testnet"),
+    Type.Literal("mainnet"),
+  ]),
+  address: EvmAddress,
+  immutable: Type.Literal(true),
+  investorAddress: EvmAddress,
+  traderAddress: EvmAddress,
+  traderSharePercent: Type.Number({ minimum: 0, maximum: 100 }),
+  splitType: Type.Union([Type.Literal("push"), Type.Literal("pull")]),
+  protocolVersion: Type.String(),
+  deploymentTxHash: Type.Optional(TransactionHash),
+  verifiedAt: IsoDateTime,
+});
+
+export const SplitNetworkStatus = Type.Object({
+  mode: Type.Union([
+    Type.Literal("disabled"),
+    Type.Literal("test_fork"),
+  ]),
+  connected: Type.Boolean(),
+  factoryDeployed: Type.Boolean(),
+  chainId: Type.Optional(Type.Integer({ minimum: 1 })),
+  networkName: Type.Optional(Type.String()),
+  blockNumber: Type.Optional(Type.String()),
+  signerAddress: Type.Optional(EvmAddress),
+  signerBalanceWei: Type.Optional(Type.String()),
+});
+
+export const SplitOverview = Type.Object({
+  network: SplitNetworkStatus,
+  items: Type.Array(SplitConfiguration),
+});
+
+export const ProvisionTestSplitBody = Type.Object({
+  traderSharePercent: Type.Number({ exclusiveMinimum: 0, maximum: 50 }),
+});
+
 export type SettlementDto = Static<typeof Settlement>;
 export type CreateSettlementInput = Static<typeof CreateSettlementBody>;
 export type SettlementListDto = Static<typeof SettlementListResponse>;
+export type SplitConfigurationDto = Static<typeof SplitConfiguration>;
+export type SplitNetworkStatusDto = Static<typeof SplitNetworkStatus>;
+export type SplitOverviewDto = Static<typeof SplitOverview>;
+export type ProvisionTestSplitInput = Static<typeof ProvisionTestSplitBody>;

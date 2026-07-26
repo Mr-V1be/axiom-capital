@@ -14,12 +14,47 @@ export interface AppConfig {
         actorId: string;
       };
   encryptionKey: string;
+  splits:
+    | { mode: "disabled" }
+    | {
+        mode: "test_fork";
+        chainId: 84532;
+        networkName: "Base Sepolia Fork";
+        rpcUrl: string;
+        deployerPrivateKey: `0x${string}`;
+        recipientSeed: string;
+      };
 }
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Missing required environment variable ${name}`);
   return value;
+}
+
+function loadSplitsConfig(): AppConfig["splits"] {
+  const mode = process.env.SPLITS_MODE?.trim() ?? "disabled";
+  if (mode === "disabled") return { mode };
+  if (mode !== "test_fork") {
+    throw new Error(`Unsupported SPLITS_MODE: ${mode}`);
+  }
+  const privateKey = required("SPLITS_DEPLOYER_PRIVATE_KEY");
+  if (!/^0x[a-fA-F0-9]{64}$/.test(privateKey)) {
+    throw new Error("SPLITS_DEPLOYER_PRIVATE_KEY must be a 32-byte hex key");
+  }
+  const rpcUrl = required("SPLITS_RPC_URL");
+  const rpcHost = new URL(rpcUrl).hostname;
+  if (!["127.0.0.1", "localhost", "::1"].includes(rpcHost)) {
+    throw new Error("test_fork Splits RPC must be bound to localhost");
+  }
+  return {
+    mode,
+    chainId: 84532,
+    networkName: "Base Sepolia Fork",
+    rpcUrl,
+    deployerPrivateKey: privateKey as `0x${string}`,
+    recipientSeed: required("SPLITS_RECIPIENT_SEED"),
+  };
 }
 
 export function loadConfig(): AppConfig {
@@ -53,5 +88,6 @@ export function loadConfig(): AppConfig {
         }
       : { mode: "jwt", jwtSecret: required("JWT_SECRET") },
     encryptionKey: required("KEY_ENCRYPTION_KEY"),
+    splits: loadSplitsConfig(),
   };
 }
