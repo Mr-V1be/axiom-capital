@@ -7,6 +7,7 @@ import type {
 import {
   createPublicClient,
   createWalletClient,
+  encodeAbiParameters,
   getAddress,
   http,
   keccak256,
@@ -24,6 +25,23 @@ import { ExternalServiceError } from "../../domain/shared/domain-error.js";
 const FACTORY = "0x8E8eB0cC6AE34A38B67D5Cf91ACa38f60bc3Ecf4";
 const VERSION = "splitV2o2";
 const PUSH = "push" as SplitV2Type;
+const PERCENTAGE_SCALE = 1_000_000n;
+const SPLIT_TUPLE = {
+  type: "tuple",
+  components: [
+    { name: "recipients", type: "address[]" },
+    { name: "allocations", type: "uint256[]" },
+    { name: "totalAllocation", type: "uint256" },
+    { name: "distributionIncentive", type: "uint16" },
+  ],
+} as const;
+const SPLIT_HASH_ABI = [{
+  type: "function",
+  name: "splitHash",
+  stateMutability: "view",
+  inputs: [],
+  outputs: [{ name: "", type: "bytes32" }],
+}] as const;
 
 interface GatewayConfig {
   chainId: 84532;
@@ -156,31 +174,46 @@ export class SplitsV2TestForkGateway implements SplitProvisioningGateway {
     investorAddress: `0x${string}`,
     traderSharePercent: number,
   ): Promise<Date> {
-    const [owner, metadata, bytecode] = await Promise.all([
+    const [owner, version, bytecode, actualSplitHash] = await Promise.all([
       this.client.splitV2.owner({
         splitAddress,
         chainId: this.config.chainId,
       }),
-      this.client.splitV2.getSplitMetadataViaProvider({
+      this.client.splitV2.getSplitVersion({
         splitAddress,
         chainId: this.config.chainId,
       }),
       this.publicClient.getBytecode({ address: splitAddress }),
+      this.publicClient.readContract({
+        address: splitAddress,
+        abi: SPLIT_HASH_ABI,
+        functionName: "splitHash",
+      }),
     ]);
-    const recipients = metadata.split.recipients;
-    const investor = recipients.find(
-      (item) => getAddress(item.recipient.address) === getAddress(investorAddress),
-    );
-    const trader = recipients.find(
-      (item) => getAddress(item.recipient.address) === this.signer.address,
+    const expectedSplitHash = this.splitHash(
+      investorAddress,
+      traderSharePercent,
     );
     const valid = owner.ownerAddress === zeroAddress &&
       Boolean(bytecode && bytecode !== "0x") &&
-      metadata.split.distributeDirection === "push" &&
-      investor?.percentAllocation === 100 - traderSharePercent &&
-      trader?.percentAllocation === traderSharePercent;
+      version === VERSION &&
+      actualSplitHash === expectedSplitHash;
     if (!valid) throw new Error("Deployed Split failed on-chain verification");
     return new Date();
+  }
+
+  private splitHash(
+    investorAddress: `0x${string}`,
+    traderSharePercent: number,
+  ) {
+    const traderAllocation = BigInt(Math.round(traderSharePercent * 10_000));
+    const investorAllocation = PERCENTAGE_SCALE - traderAllocation;
+    return keccak256(encodeAbiParameters([SPLIT_TUPLE], [{
+      recipients: [getAddress(investorAddress), this.signer.address],
+      allocations: [investorAllocation, traderAllocation],
+      totalAllocation: PERCENTAGE_SCALE,
+      distributionIncentive: 0,
+    }]));
   }
 
   private investorAddress(accountId: string): `0x${string}` {
