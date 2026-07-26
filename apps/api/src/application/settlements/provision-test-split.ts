@@ -27,18 +27,17 @@ export class ProvisionTestSplit {
     );
     if (!account) throw new NotFoundError("InvestorAccount", input.accountId);
     const existing = await this.configurations.findByAccount(input.accountId);
-    if (existing) return existing;
-
     const provisioned = await this.gateway.provision({
       tenantId: context.tenantId,
       accountId: input.accountId,
-      traderSharePercent: input.traderSharePercent,
+      traderSharePercent: existing?.traderSharePercent ??
+        input.traderSharePercent,
     });
     const configuration = {
-      id: this.ids.next(),
+      id: existing?.id ?? this.ids.next(),
       accountId: input.accountId,
       immutable: true as const,
-      createdAt: this.clock.now(),
+      createdAt: existing?.createdAt ?? this.clock.now(),
       ...provisioned,
     };
     await this.configurations.save(configuration);

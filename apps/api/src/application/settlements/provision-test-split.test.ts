@@ -29,6 +29,7 @@ describe("ProvisionTestSplit", () => {
   it("provisions, verifies and persists an immutable test Split", async () => {
     let saved: SplitConfigurationState | null = null;
     let audited = false;
+    let provisions = 0;
     const useCase = new ProvisionTestSplit(
       {
         async findById() { return account; },
@@ -37,7 +38,7 @@ describe("ProvisionTestSplit", () => {
         async list() { return { items: [account] }; },
       },
       {
-        async findByAccount() { return null; },
+        async findByAccount() { return saved; },
         async listByTenant() { return []; },
         async getVerifiedConfiguration() { return null; },
         async save(value) { saved = value; },
@@ -51,6 +52,7 @@ describe("ProvisionTestSplit", () => {
           };
         },
         async provision(input) {
+          provisions += 1;
           return {
             chainId: 84532,
             networkName: "Base Sepolia Fork",
@@ -81,5 +83,13 @@ describe("ProvisionTestSplit", () => {
     assert.ok(persisted);
     assert.equal(persisted.address, result.address);
     assert.equal(audited, true);
+
+    const recovered = await useCase.execute(context, {
+      accountId: account.snapshot().id,
+      traderSharePercent: 10,
+    });
+    assert.equal(recovered.traderSharePercent, 20);
+    assert.equal(recovered.id, result.id);
+    assert.equal(provisions, 2);
   });
 });

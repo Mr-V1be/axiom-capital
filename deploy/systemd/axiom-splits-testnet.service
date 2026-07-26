@@ -7,11 +7,12 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStartPre=-/usr/bin/docker rm -f axiom-splits-testnet
+ExecStartPre=/usr/bin/install -d -o 1000 -g 1000 -m 700 /var/lib/axiom-splits-testnet
 ExecStart=/usr/bin/docker run --rm --name axiom-splits-testnet \
   -p 127.0.0.1:8545:8545 \
   -v /var/lib/axiom-splits-testnet:/state \
   ghcr.io/foundry-rs/foundry@sha256:043752653d5be351c71709091b3db97c4421c907eb40ea294195e7f532aadf46 \
-  "anvil --host 0.0.0.0 --fork-url https://sepolia.base.org --chain-id 84532 --block-time 1 --state /state/anvil.json"
+  "anvil --host 0.0.0.0 --fork-url https://sepolia.base.org --chain-id 84532 --state /state/anvil.json"
 ExecStop=/usr/bin/docker stop --time 20 axiom-splits-testnet
 Restart=on-failure
 RestartSec=5
