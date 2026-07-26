@@ -12,6 +12,7 @@ import { Toast } from "../../shared/ui/Toast";
 import { OrderTicket } from "./OrderTicket";
 import { MarketStrip } from "./MarketStrip";
 import { PositionsPanel } from "../positions/PositionsPanel";
+import { ExchangeActivityPanel } from "../positions/ExchangeActivityPanel";
 
 export default function TradingPage() {
   const gateway = useDataGateway();
@@ -149,6 +150,7 @@ export default function TradingPage() {
         </section>
 
         <PositionsPanel />
+        <ExchangeActivityPanel />
 
         {batch && (
           <section className="panel execution-panel">

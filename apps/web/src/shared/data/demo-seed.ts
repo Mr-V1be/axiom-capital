@@ -99,6 +99,7 @@ export const demoPositions: PositionDto[] = [{
   realizedPnl: "-0.08",
   roePercent: "18.756",
   marginRatioPercent: "1.24",
+  canAdjustMargin: false,
   openedAt: "2026-07-23T14:20:00.000Z",
   updatedAt: demoNow,
 }];

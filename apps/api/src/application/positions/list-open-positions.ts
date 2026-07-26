@@ -9,6 +9,7 @@ interface EnrichedPosition extends ExchangePosition {
   accountId: string;
   accountLabel: string;
   investorName: string;
+  canAdjustMargin: boolean;
 }
 
 interface PositionFailure {
@@ -47,6 +48,7 @@ export class ListOpenPositions {
             accountId: state.id,
             accountLabel: state.label,
             investorName: state.investorName,
+            canAdjustMargin: position.marginMode === "isolated",
           })),
           failures: [] as PositionFailure[],
         };

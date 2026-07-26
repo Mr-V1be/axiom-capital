@@ -57,6 +57,77 @@ export interface ExchangePosition {
   updatedAt: Date;
 }
 
+export interface ExchangeActivityOrder {
+  id: string;
+  symbol: string;
+  side: "buy" | "sell";
+  type: string;
+  status: string;
+  amount: string;
+  filled: string;
+  remaining: string;
+  price: string | null;
+  averagePrice: string | null;
+  reduceOnly: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface ExchangeActivityTrade {
+  id: string;
+  orderId: string | null;
+  symbol: string;
+  side: "buy" | "sell";
+  price: string;
+  amount: string;
+  cost: string;
+  fee: string | null;
+  feeCurrency: string | null;
+  realizedPnl: string | null;
+  createdAt: Date | null;
+}
+
+export interface ExchangeActivity {
+  openOrders: ExchangeActivityOrder[];
+  recentOrders: ExchangeActivityOrder[];
+  recentTrades: ExchangeActivityTrade[];
+}
+
+export type PositionActionRequest =
+  | {
+      action: "close";
+      position: ExchangePosition;
+      contracts: string;
+      orderType: "market" | "limit";
+      limitPrice?: string;
+      clientOrderId: string;
+    }
+  | {
+      action: "set_leverage";
+      position: ExchangePosition;
+      leverage: number;
+    }
+  | {
+      action: "adjust_margin";
+      position: ExchangePosition;
+      direction: "add" | "reduce";
+      amount: string;
+    }
+  | {
+      action: "place_protection";
+      position: ExchangePosition;
+      protectionType: "take_profit" | "stop_loss";
+      triggerPrice: string;
+      contracts: string;
+      priceSource: "last" | "mark" | "index";
+      clientOrderId: string;
+    };
+
+export interface PositionActionResult {
+  references: string[];
+  message: string;
+}
+
 export type CapabilityState = "available" | "unavailable" | "unknown";
 
 export interface ExchangeCapability {
@@ -117,6 +188,7 @@ export interface ExchangeGateway {
   ): Promise<void>;
   fetchBalance(credentials: AccountCredentials): Promise<ExchangeBalance>;
   fetchPositions(credentials: AccountCredentials): Promise<ExchangePosition[]>;
+  fetchActivity(credentials: AccountCredentials): Promise<ExchangeActivity>;
   fetchOpenPositions(credentials: AccountCredentials): Promise<number>;
   fetchAccountDetails(
     credentials: AccountCredentials,
@@ -137,6 +209,10 @@ export interface ExchangeGateway {
     credentials: AccountCredentials,
     reference: ExchangeOrderReference,
   ): Promise<ExchangeOrderResult>;
+  executePositionAction(
+    credentials: AccountCredentials,
+    request: PositionActionRequest,
+  ): Promise<PositionActionResult>;
 }
 
 export interface ExchangeGatewayFactory {

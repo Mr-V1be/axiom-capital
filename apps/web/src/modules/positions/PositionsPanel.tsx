@@ -3,7 +3,10 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   RefreshCw,
+  Settings2,
 } from "lucide-react";
+import type { PositionDto } from "@axiom/contracts";
+import { useState } from "react";
 import { useDataGateway } from "../../shared/data/gateway-context";
 import {
   formatMoney,
@@ -11,6 +14,7 @@ import {
   formatTime,
 } from "../../shared/format/formatters";
 import { usePollingQuery } from "../../shared/hooks/use-polling-query";
+import { PositionActionModal } from "./PositionActionModal";
 
 export function PositionsPanel() {
   const gateway = useDataGateway();
@@ -20,6 +24,7 @@ export function PositionsPanel() {
     5_000,
   );
   const data = positions.data;
+  const [selected, setSelected] = useState<PositionDto | null>(null);
 
   return (
     <section className="panel positions-panel">
@@ -80,6 +85,7 @@ export function PositionsPanel() {
                 <th>Маржа / плечо</th>
                 <th>PnL / ROE</th>
                 <th>Ликвидация</th>
+                <th>Управление</th>
               </tr>
             </thead>
             <tbody>
@@ -129,6 +135,14 @@ export function PositionsPanel() {
                       <strong>{price(position.liquidationPrice)}</strong>
                       <small>MR {percent(position.marginRatioPercent, false)}</small>
                     </td>
+                    <td>
+                      <button
+                        className="button button--secondary position-manage-button"
+                        onClick={() => setSelected(position)}
+                      >
+                        <Settings2 size={14} /> Управление
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -136,6 +150,12 @@ export function PositionsPanel() {
           </table>
         </div>
       )}
+      <PositionActionModal
+        key={selected ? `${selected.accountId}:${selected.id}` : "closed"}
+        position={selected}
+        onClose={() => setSelected(null)}
+        onCompleted={async () => { await positions.refresh(); }}
+      />
     </section>
   );
 }

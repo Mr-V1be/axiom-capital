@@ -3,12 +3,17 @@ import type {
   AccountDetailsDto,
   BatchOrderDto,
   CancelBatchOrderInput,
+  CancelExchangeOrderInput,
   ConnectAccountInput,
   CreateSettlementInput,
+  ExchangeActivityDto,
+  ExchangeCommandDto,
   InvestorAccountDto,
   MarketQuoteDto,
   PlaceBatchOrderInput,
   PositionListDto,
+  PositionActionDto,
+  PositionActionInput,
   PortfolioOverviewDto,
   ProvisionTestSplitInput,
   SettlementDto,
@@ -44,6 +49,35 @@ export class HttpDataGateway implements DataGateway {
     return this.request<PositionListDto>("/v1/positions", {
       ...(signal ? { signal } : {}),
     });
+  }
+
+  listExchangeActivity(signal?: AbortSignal) {
+    return this.request<ExchangeActivityDto>("/v1/exchange/activity", {
+      ...(signal ? { signal } : {}),
+    });
+  }
+
+  managePosition(
+    accountId: string,
+    positionId: string,
+    input: PositionActionInput,
+  ) {
+    const account = encodeURIComponent(accountId);
+    const position = encodeURIComponent(positionId);
+    return this.request<PositionActionDto>(
+      `/v1/positions/${account}/${position}/actions`,
+      { method: "POST", body: JSON.stringify(input) },
+    );
+  }
+
+  cancelExchangeOrder(
+    orderId: string,
+    input: CancelExchangeOrderInput,
+  ) {
+    return this.request<ExchangeCommandDto>(
+      `/v1/exchange/orders/${encodeURIComponent(orderId)}/cancel`,
+      { method: "POST", body: JSON.stringify(input) },
+    );
   }
 
   listAccounts(signal?: AbortSignal) {

@@ -84,6 +84,9 @@ function fixture() {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
     async fetchPositions() { return []; },
+    async fetchActivity() {
+      return { openOrders: [], recentOrders: [], recentTrades: [] };
+    },
     async fetchOpenPositions() { return 0; },
     async fetchAccountDetails() {
       throw new Error("Account details are not used in order lifecycle tests");
@@ -111,6 +114,9 @@ function fixture() {
         remainingQuote: "600",
         averagePrice: "118000",
       };
+    },
+    async executePositionAction() {
+      throw new Error("Not used");
     },
   };
   const factory: ExchangeGatewayFactory = { for: () => gateway };

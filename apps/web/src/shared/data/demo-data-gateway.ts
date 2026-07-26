@@ -1,23 +1,27 @@
 import type {
-  BatchOrderDto,
   CancelBatchOrderInput,
+  CancelExchangeOrderInput,
   ConnectAccountInput,
   CreateSettlementInput,
   InvestorAccountDto,
   PlaceBatchOrderInput,
+  PositionActionInput,
   ProvisionTestSplitInput,
 } from "@axiom/contracts";
 import { DataGateway } from "./data-gateway";
 import { demoAccounts, demoNow, demoPositions } from "./demo-seed";
 import { demoAccountDetails } from "./demo-account-details";
 import { DemoSettlementGateway } from "./demo-settlement-gateway";
+import { DemoPositionActivityGateway } from "./demo/position-activity-gateway";
+import { DemoOrderGateway } from "./demo/order-gateway";
 
 const money = (amount: string, currency = "USDT") => ({ amount, currency });
 
 export class DemoDataGateway implements DataGateway {
   private accounts = [...demoAccounts];
-  private batches = new Map<string, BatchOrderDto>();
   private readonly settlementGateway = new DemoSettlementGateway();
+  private readonly positionGateway = new DemoPositionActivityGateway();
+  private readonly orderGateway = new DemoOrderGateway(() => this.accounts);
 
   async getPortfolioOverview() {
     const equity = this.accounts.reduce(
@@ -58,6 +62,25 @@ export class DemoDataGateway implements DataGateway {
       failures: [],
       updatedAt: new Date().toISOString(),
     };
+  }
+
+  async listExchangeActivity() {
+    return this.positionGateway.list();
+  }
+
+  async managePosition(
+    _accountId: string,
+    _positionId: string,
+    input: PositionActionInput,
+  ) {
+    return this.positionGateway.manage(input);
+  }
+
+  async cancelExchangeOrder(
+    _orderId: string,
+    input: CancelExchangeOrderInput,
+  ) {
+    return this.positionGateway.cancel(input);
   }
 
   async listAccounts() {
@@ -147,76 +170,15 @@ export class DemoDataGateway implements DataGateway {
   }
 
   async placeBatchOrder(input: PlaceBatchOrderInput) {
-    const selected = this.accounts.filter((item) =>
-      input.accountIds.includes(item.id)
-    );
-    const equity = selected.reduce(
-      (sum, account) => sum + Number(account.equity.amount),
-      0,
-    );
-    const total = input.allocationMode === "fixed_quote"
-      ? Number(input.totalQuoteAmount)
-      : equity * input.allocationPercent / 100;
-    const batch: BatchOrderDto = {
-      batchId: `batch_${crypto.randomUUID().replaceAll("-", "").slice(0, 18)}`,
-      symbol: input.symbol,
-      side: input.side,
-      type: input.type,
-      allocationMode: input.allocationMode,
-      allocationPercent: totalEquityPercent(total, equity),
-      ...(input.allocationMode === "fixed_quote"
-        ? { requestedQuoteAmount: money(input.totalQuoteAmount) }
-        : {}),
-      submittedAt: new Date().toISOString(),
-      results: input.accountIds.map((accountId) => {
-        const account = this.accounts.find((item) => item.id === accountId);
-        const allocated = equity === 0
-          ? 0
-          : total * Number(account?.equity.amount ?? 0) / equity;
-        return {
-          accountId,
-          orderId: `mx_${crypto.randomUUID().slice(0, 12)}`,
-          status: "accepted" as const,
-          allocated: money(allocated.toFixed(2)),
-          filled: money("0"),
-          remaining: money(allocated.toFixed(2)),
-        };
-      }),
-    };
-    this.batches.set(batch.batchId, batch);
-    return batch;
+    return this.orderGateway.place(input);
   }
 
   async syncBatchOrder(batchId: string) {
-    const batch = this.getBatch(batchId);
-    const updated: BatchOrderDto = {
-      ...batch,
-      results: batch.results.map((result) => result.status === "accepted"
-        ? {
-            ...result,
-            status: "partially_filled",
-            filled: money((Number(result.allocated.amount) / 2).toFixed(2)),
-            remaining: money((Number(result.allocated.amount) / 2).toFixed(2)),
-          }
-        : result),
-    };
-    this.batches.set(batchId, updated);
-    return updated;
+    return this.orderGateway.sync(batchId);
   }
 
   async cancelBatchOrder(batchId: string, input: CancelBatchOrderInput) {
-    const batch = this.getBatch(batchId);
-    const selected = input.accountIds ? new Set(input.accountIds) : null;
-    const updated: BatchOrderDto = {
-      ...batch,
-      results: batch.results.map((result) =>
-        (!selected || selected.has(result.accountId)) &&
-        ["accepted", "partially_filled"].includes(result.status)
-          ? { ...result, status: "cancelled" as const }
-          : result),
-    };
-    this.batches.set(batchId, updated);
-    return updated;
+    return this.orderGateway.cancel(batchId, input);
   }
 
   async listSettlements() {
@@ -238,12 +200,4 @@ export class DemoDataGateway implements DataGateway {
     return this.settlementGateway.provision(accountId, input);
   }
 
-  private getBatch(batchId: string): BatchOrderDto {
-    const batch = this.batches.get(batchId);
-    if (!batch) throw new Error("Order batch not found");
-    return batch;
-  }
 }
-
-const totalEquityPercent = (total: number, equity: number) =>
-  equity > 0 ? total / equity * 100 : 0;

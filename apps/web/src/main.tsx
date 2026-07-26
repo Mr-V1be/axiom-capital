@@ -15,6 +15,7 @@ import "./styles/features/account-details.css";
 import "./styles/features/trading.css";
 import "./styles/features/trading/order-ticket.css";
 import "./styles/features/positions.css";
+import "./styles/features/positions/actions.css";
 import "./styles/features/settlements.css";
 import "./styles/features/split-testnet.css";
 import "./styles/responsive/tablet.css";

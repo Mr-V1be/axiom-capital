@@ -7,6 +7,9 @@ import { UpdateAccountAccess } from "../application/accounts/update-account-acce
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { GetMarketQuote } from "../application/market/get-market-quote.js";
 import { ListOpenPositions } from "../application/positions/list-open-positions.js";
+import { ListExchangeActivity } from "../application/positions/list-exchange-activity.js";
+import { ManagePosition } from "../application/positions/manage-position.js";
+import { CancelExchangeOrder } from "../application/positions/cancel-exchange-order.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
 import { GetSplitOverview } from "../application/settlements/get-split-overview.js";
 import { ListSettlements } from "../application/settlements/list-settlements.js";
@@ -30,6 +33,7 @@ import { PrismaOrderRepository } from "../infrastructure/persistence/order-repos
 import { createPrismaClient } from "../infrastructure/persistence/prisma-client.js";
 import { PrismaRiskProfileRepository } from "../infrastructure/persistence/risk-repository.js";
 import { PrismaSettlementRepository } from "../infrastructure/persistence/settlement-repository.js";
+import { PrismaPositionCommandRepository } from "../infrastructure/persistence/commands/position-command-repository.js";
 import { AesGcmSecretCipher } from "../infrastructure/security/aes-secret-cipher.js";
 import { DisabledSplitGateway } from "../infrastructure/splits/disabled-split-gateway.js";
 import { PrismaSplitConfigurationRepository } from "../infrastructure/splits/prisma-split-repository.js";
@@ -50,6 +54,7 @@ export function createContainer(config: AppConfig) {
     ? new SplitsV2TestForkGateway(config.splits)
     : new DisabledSplitGateway();
   const audit = new PrismaAuditWriter(db, ids);
+  const positionCommands = new PrismaPositionCommandRepository(db);
   const exchanges = new DefaultExchangeGatewayFactory(new MexcGateway());
   const scheduler = new BoundedExecutionScheduler(5);
   const connectionAccess = new AccountConnectionAccess(accounts, exchanges, cipher);
@@ -89,6 +94,24 @@ export function createContainer(config: AppConfig) {
         connectionAccess,
         scheduler,
         clock,
+      ),
+      listExchangeActivity: new ListExchangeActivity(
+        accounts,
+        connectionAccess,
+        scheduler,
+        clock,
+      ),
+      managePosition: new ManagePosition(
+        executionAccess,
+        positionCommands,
+        audit,
+        ids,
+      ),
+      cancelExchangeOrder: new CancelExchangeOrder(
+        executionAccess,
+        positionCommands,
+        audit,
+        ids,
       ),
       placeBatchOrder: new PlaceBatchOrder(
         accounts,

@@ -41,6 +41,7 @@ model Tenant {
   orderBatch  OrderBatch[]
   settlements Settlement[]
   auditEvents AuditEvent[]
+  positionCommands PositionCommand[]
 }
 
 model User {
@@ -78,9 +79,30 @@ model InvestorAccount {
   riskProfile    RiskProfile?
   settlements    Settlement[]
   splitConfig    SplitConfiguration?
+  positionCommands PositionCommand[]
 
   @@unique([tenantId, label])
   @@index([tenantId, status])
+}
+
+model PositionCommand {
+  id             String          @id
+  tenantId       String
+  accountId      String
+  positionId     String?
+  idempotencyKey String
+  action         String
+  request        Json
+  status         String
+  result         Json?
+  error          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  account        InvestorAccount @relation(fields: [accountId], references: [id])
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([accountId, createdAt(sort: Desc)])
 }
 
 model BalanceSnapshot {

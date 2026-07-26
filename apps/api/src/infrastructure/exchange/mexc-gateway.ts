@@ -6,6 +6,7 @@ import {
   ExchangeGateway,
   ExchangeOrderRequest,
   ExchangeOrderResult,
+  PositionActionRequest,
 } from "../../domain/exchange/exchange-gateway.js";
 import { ExternalServiceError } from "../../domain/shared/domain-error.js";
 import { MexcAccountInspector } from "./mexc-account-inspector.js";
@@ -13,17 +14,17 @@ import { MexcMarketData } from "./mexc-market-data.js";
 import { MexcOrderSizer } from "./mexc-order-sizer.js";
 import { MexcOrderNormalizer } from "./mexc/order-normalizer.js";
 import { MexcPositionMapper } from "./mexc/position-mapper.js";
+import { MexcActivityReader } from "./mexc/activity-reader.js";
+import { MexcPositionController, validatePositionAction } from "./mexc/position-controller.js";
 
 interface MexcAccountInfo {
   canTrade?: boolean;
   canWithdraw?: boolean;
 }
-
 export class MexcGateway implements ExchangeGateway {
   private readonly orderSizer = new MexcOrderSizer();
   private readonly orderNormalizer = new MexcOrderNormalizer();
   private readonly positionMapper = new MexcPositionMapper();
-
   private client(credentials: AccountCredentials): mexc {
     return new ccxt.mexc({
       apiKey: credentials.apiKey,
@@ -85,6 +86,17 @@ export class MexcGateway implements ExchangeGateway {
       });
     } catch (error) {
       throw this.wrap(error, "Unable to fetch open MEXC positions");
+    }
+  }
+
+  async fetchActivity(credentials: AccountCredentials) {
+    if (credentials.marketType !== "swap") {
+      return { openOrders: [], recentOrders: [], recentTrades: [] };
+    }
+    try {
+      return await new MexcActivityReader(this.client(credentials)).read();
+    } catch (error) {
+      throw this.wrap(error, "Unable to fetch MEXC futures activity");
     }
   }
 
@@ -184,6 +196,22 @@ export class MexcGateway implements ExchangeGateway {
       return await this.fetchOrder(credentials, reference);
     } catch (error) {
       throw this.wrap(error, "Unable to cancel MEXC order");
+    }
+  }
+
+  async executePositionAction(
+    credentials: AccountCredentials,
+    request: PositionActionRequest,
+  ) {
+    try {
+      if (credentials.marketType !== "swap") {
+        throw new Error("Position controls require a futures account");
+      }
+      validatePositionAction(request);
+      return await new MexcPositionController(this.client(credentials))
+        .execute(request);
+    } catch (error) {
+      throw this.wrap(error, "MEXC rejected the position command");
     }
   }
 

@@ -28,6 +28,7 @@ export const PositionResponse = Type.Object({
   realizedPnl: NullableDecimal,
   roePercent: NullableDecimal,
   marginRatioPercent: NullableDecimal,
+  canAdjustMargin: Type.Boolean(),
   openedAt: Type.Union([IsoDateTime, Type.Null()]),
   updatedAt: IsoDateTime,
 });

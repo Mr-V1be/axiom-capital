@@ -3,12 +3,17 @@ import type {
   AccountDetailsDto,
   BatchOrderDto,
   CancelBatchOrderInput,
+  CancelExchangeOrderInput,
   ConnectAccountInput,
   CreateSettlementInput,
+  ExchangeActivityDto,
+  ExchangeCommandDto,
   InvestorAccountDto,
   MarketQuoteDto,
   PlaceBatchOrderInput,
   PositionListDto,
+  PositionActionDto,
+  PositionActionInput,
   PortfolioOverviewDto,
   ProvisionTestSplitInput,
   SettlementDto,
@@ -19,6 +24,16 @@ import type {
 export interface DataGateway {
   getPortfolioOverview(signal?: AbortSignal): Promise<PortfolioOverviewDto>;
   listPositions(signal?: AbortSignal): Promise<PositionListDto>;
+  listExchangeActivity(signal?: AbortSignal): Promise<ExchangeActivityDto>;
+  managePosition(
+    accountId: string,
+    positionId: string,
+    input: PositionActionInput,
+  ): Promise<PositionActionDto>;
+  cancelExchangeOrder(
+    orderId: string,
+    input: CancelExchangeOrderInput,
+  ): Promise<ExchangeCommandDto>;
   listAccounts(signal?: AbortSignal): Promise<AccountListDto>;
   getAccountDetails(
     accountId: string,
