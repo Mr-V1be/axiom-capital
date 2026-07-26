@@ -11,6 +11,8 @@ import { ExternalServiceError } from "../../domain/shared/domain-error.js";
 import { MexcAccountInspector } from "./mexc-account-inspector.js";
 import { MexcMarketData } from "./mexc-market-data.js";
 import { MexcOrderSizer } from "./mexc-order-sizer.js";
+import { MexcOrderNormalizer } from "./mexc/order-normalizer.js";
+import { MexcPositionMapper } from "./mexc/position-mapper.js";
 
 interface MexcAccountInfo {
   canTrade?: boolean;
@@ -19,6 +21,8 @@ interface MexcAccountInfo {
 
 export class MexcGateway implements ExchangeGateway {
   private readonly orderSizer = new MexcOrderSizer();
+  private readonly orderNormalizer = new MexcOrderNormalizer();
+  private readonly positionMapper = new MexcPositionMapper();
 
   private client(credentials: AccountCredentials): mexc {
     return new ccxt.mexc({
@@ -67,12 +71,18 @@ export class MexcGateway implements ExchangeGateway {
   }
 
   async fetchOpenPositions(credentials: AccountCredentials): Promise<number> {
-    if (credentials.marketType === "spot") return 0;
+    return (await this.fetchPositions(credentials)).length;
+  }
+
+  async fetchPositions(credentials: AccountCredentials) {
+    if (credentials.marketType === "spot") return [];
     try {
       const positions = await this.client(credentials).fetchPositions();
-      return positions.filter((position) =>
-        new Decimal(position.contracts ?? 0).isPositive()
-      ).length;
+      const now = new Date();
+      return positions.flatMap((position) => {
+        const mapped = this.positionMapper.map(position, now);
+        return mapped ? [mapped] : [];
+      });
     } catch (error) {
       throw this.wrap(error, "Unable to fetch open MEXC positions");
     }
@@ -132,7 +142,11 @@ export class MexcGateway implements ExchangeGateway {
         parameters,
       );
       if (!result.id) throw new Error("Exchange returned no order identifier");
-      return this.normalizeOrder(result, request.quoteAmount);
+      return this.orderNormalizer.normalize(
+        result,
+        credentials.marketType,
+        request.quoteAmount,
+      );
     } catch (error) {
       throw this.wrap(error, "MEXC rejected the order");
     }
@@ -152,7 +166,7 @@ export class MexcGateway implements ExchangeGateway {
             (item) => String(item.id) === reference.orderId,
           );
       if (!order) throw new Error("Order was not found on MEXC");
-      return this.normalizeOrder(order);
+      return this.orderNormalizer.normalize(order, credentials.marketType);
     } catch (error) {
       throw this.wrap(error, "Unable to synchronize MEXC order");
     }
@@ -171,42 +185,6 @@ export class MexcGateway implements ExchangeGateway {
     } catch (error) {
       throw this.wrap(error, "Unable to cancel MEXC order");
     }
-  }
-
-  private normalizeOrder(
-    order: {
-      id?: string | undefined;
-      status?: string | undefined;
-      filled?: number | undefined;
-      remaining?: number | undefined;
-      cost?: number | undefined;
-      average?: number | undefined;
-      price?: number | undefined;
-    },
-    requestedQuote?: string,
-  ): ExchangeOrderResult {
-    if (!order.id) throw new Error("Exchange returned no order identifier");
-    const price = new Decimal(order.average ?? order.price ?? 0);
-    const filled = order.cost !== undefined
-      ? new Decimal(order.cost)
-      : new Decimal(order.filled ?? 0).times(price);
-    const remaining = requestedQuote
-      ? Decimal.max(new Decimal(requestedQuote).minus(filled), 0)
-      : new Decimal(order.remaining ?? 0).times(price);
-    const status = order.status === "canceled"
-      ? "cancelled"
-      : order.status === "closed"
-        ? "filled"
-        : filled.isPositive()
-          ? "partially_filled"
-          : "accepted";
-    return {
-      orderId: String(order.id),
-      status,
-      filledQuote: filled.toFixed(),
-      remainingQuote: remaining.toFixed(),
-      ...(price.isPositive() ? { averagePrice: price.toFixed() } : {}),
-    };
   }
 
   private symbol(symbol: string, marketType: "spot" | "swap"): string {

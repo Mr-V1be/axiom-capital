@@ -81,6 +81,7 @@ function fixture(existing: OrderBatch | null = null, equity = "10000") {
     async fetchBalance() {
       return { currency: "USDT", equity: "10000", balances: {} };
     },
+    async fetchPositions() { return []; },
     async fetchOpenPositions() { return 0; },
     async fetchAccountDetails() {
       throw new Error("Account details are not used in order placement tests");

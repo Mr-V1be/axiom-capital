@@ -8,6 +8,7 @@ import type {
   InvestorAccountDto,
   MarketQuoteDto,
   PlaceBatchOrderInput,
+  PositionListDto,
   PortfolioOverviewDto,
   ProvisionTestSplitInput,
   SettlementDto,
@@ -35,6 +36,12 @@ export class HttpDataGateway implements DataGateway {
 
   getPortfolioOverview(signal?: AbortSignal) {
     return this.request<PortfolioOverviewDto>("/v1/portfolio/overview", {
+      ...(signal ? { signal } : {}),
+    });
+  }
+
+  listPositions(signal?: AbortSignal) {
+    return this.request<PositionListDto>("/v1/positions", {
       ...(signal ? { signal } : {}),
     });
   }
@@ -144,7 +151,9 @@ export class HttpDataGateway implements DataGateway {
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...init,
       headers: {
-        "content-type": "application/json",
+        ...(init.body !== undefined
+          ? { "content-type": "application/json" }
+          : {}),
         ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },

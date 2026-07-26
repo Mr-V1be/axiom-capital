@@ -8,7 +8,7 @@ import type {
   ProvisionTestSplitInput,
 } from "@axiom/contracts";
 import { DataGateway } from "./data-gateway";
-import { demoAccounts, demoNow } from "./demo-seed";
+import { demoAccounts, demoNow, demoPositions } from "./demo-seed";
 import { demoAccountDetails } from "./demo-account-details";
 import { DemoSettlementGateway } from "./demo-settlement-gateway";
 
@@ -46,6 +46,17 @@ export class DemoDataGateway implements DataGateway {
         ).toFixed(2),
       })),
       updatedAt: demoNow,
+    };
+  }
+
+  async listPositions() {
+    return {
+      items: demoPositions.map((item) => ({
+        ...item,
+        updatedAt: new Date().toISOString(),
+      })),
+      failures: [],
+      updatedAt: new Date().toISOString(),
     };
   }
 
@@ -234,6 +245,5 @@ export class DemoDataGateway implements DataGateway {
   }
 }
 
-function totalEquityPercent(total: number, equity: number): number {
-  return equity > 0 ? total / equity * 100 : 0;
-}
+const totalEquityPercent = (total: number, equity: number) =>
+  equity > 0 ? total / equity * 100 : 0;

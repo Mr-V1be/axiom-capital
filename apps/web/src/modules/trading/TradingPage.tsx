@@ -4,12 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDataGateway } from "../../shared/data/gateway-context";
 import { formatMoney } from "../../shared/format/formatters";
 import { useMutation, useQuery } from "../../shared/hooks/use-async";
+import { usePollingQuery } from "../../shared/hooks/use-polling-query";
 import { ErrorState, LoadingState } from "../../shared/ui/DataState";
 import { Button } from "../../shared/ui/Button";
 import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { Toast } from "../../shared/ui/Toast";
 import { OrderTicket } from "./OrderTicket";
 import { MarketStrip } from "./MarketStrip";
+import { PositionsPanel } from "../positions/PositionsPanel";
 
 export default function TradingPage() {
   const gateway = useDataGateway();
@@ -56,10 +58,11 @@ export default function TradingPage() {
   );
   const marketTypes = new Set(selectedAccounts.map((item) => item.marketType));
   const marketType = selectedAccounts[0]?.marketType;
-  const quote = useQuery(
+  const quote = usePollingQuery(
     (signal) =>
       gateway.getMarketQuote(symbol, marketType ?? "spot", signal),
     [gateway, symbol, marketType],
+    5_000,
   );
   const batch = lifecycle.data?.batchId === order.data?.batchId
     ? lifecycle.data
@@ -144,6 +147,8 @@ export default function TradingPage() {
             })}
           </div>
         </section>
+
+        <PositionsPanel />
 
         {batch && (
           <section className="panel execution-panel">

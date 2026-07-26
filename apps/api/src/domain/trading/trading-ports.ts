@@ -1,6 +1,7 @@
 import { InvestorAccount } from "../accounts/investor-account.js";
 import { Money } from "../shared/money.js";
 import { OrderBatch } from "./order.js";
+export { TaskScheduler as ExecutionScheduler } from "../shared/task-scheduler.js";
 
 export interface AllocationTarget {
   accountId: string;
@@ -46,11 +47,4 @@ export interface OrderRepository {
   ): Promise<OrderBatch | null>;
   reserve(batch: OrderBatch): Promise<OrderBatch>;
   update(batch: OrderBatch): Promise<void>;
-}
-
-export interface ExecutionScheduler {
-  map<T, R>(
-    items: readonly T[],
-    task: (item: T) => Promise<R>,
-  ): Promise<R[]>;
 }

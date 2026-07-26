@@ -1,0 +1,135 @@
+.positions-panel {
+  overflow: hidden;
+}
+
+.positions-panel__header {
+  gap: 18px;
+}
+
+.positions-panel__live {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.positions-panel__live small {
+  font-size: 9px;
+}
+
+.positions-panel__live .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.positions-panel__state {
+  display: flex;
+  min-height: 96px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.positions-panel__state--error {
+  color: var(--negative);
+}
+
+.positions-panel__state button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.positions-panel__warning {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-bottom: 1px solid rgba(255, 190, 92, 0.2);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 10px;
+}
+
+.positions-table-wrap {
+  overflow-x: auto;
+}
+
+.positions-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.positions-table th {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.positions-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.positions-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.positions-table td > strong,
+.positions-table td > small {
+  display: block;
+}
+
+.positions-table td > strong {
+  font-size: 11px;
+}
+
+.positions-table td > small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.position-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.position-side--long {
+  color: var(--positive);
+}
+
+.position-side--short {
+  color: var(--negative);
+}
+
+.is-spinning {
+  animation: position-spin 0.8s linear infinite;
+}
+
+@keyframes position-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 700px) {
+  .positions-panel__header {
+    align-items: flex-start;
+  }
+
+  .positions-panel__live small {
+    display: none;
+  }
+}

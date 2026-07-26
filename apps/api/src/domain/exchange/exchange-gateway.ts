@@ -35,6 +35,28 @@ export interface ExchangeOrderReference {
   symbol: string;
 }
 
+export interface ExchangePosition {
+  id: string;
+  symbol: string;
+  side: "long" | "short";
+  contracts: string;
+  contractSize: string;
+  baseAmount: string;
+  entryPrice: string | null;
+  currentPrice: string | null;
+  liquidationPrice: string | null;
+  leverage: string | null;
+  marginMode: "cross" | "isolated" | null;
+  notional: string | null;
+  initialMargin: string | null;
+  unrealizedPnl: string | null;
+  realizedPnl: string | null;
+  roePercent: string | null;
+  marginRatioPercent: string | null;
+  openedAt: Date | null;
+  updatedAt: Date;
+}
+
 export type CapabilityState = "available" | "unavailable" | "unknown";
 
 export interface ExchangeCapability {
@@ -94,6 +116,7 @@ export interface ExchangeGateway {
     accessMode: AccountAccessMode,
   ): Promise<void>;
   fetchBalance(credentials: AccountCredentials): Promise<ExchangeBalance>;
+  fetchPositions(credentials: AccountCredentials): Promise<ExchangePosition[]>;
   fetchOpenPositions(credentials: AccountCredentials): Promise<number>;
   fetchAccountDetails(
     credentials: AccountCredentials,

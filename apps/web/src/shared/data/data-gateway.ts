@@ -8,6 +8,7 @@ import type {
   InvestorAccountDto,
   MarketQuoteDto,
   PlaceBatchOrderInput,
+  PositionListDto,
   PortfolioOverviewDto,
   ProvisionTestSplitInput,
   SettlementDto,
@@ -17,6 +18,7 @@ import type {
 
 export interface DataGateway {
   getPortfolioOverview(signal?: AbortSignal): Promise<PortfolioOverviewDto>;
+  listPositions(signal?: AbortSignal): Promise<PositionListDto>;
   listAccounts(signal?: AbortSignal): Promise<AccountListDto>;
   getAccountDetails(
     accountId: string,

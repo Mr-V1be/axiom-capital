@@ -5,6 +5,7 @@ import {
   MarketQuoteQuery,
   MarketQuoteResponse,
   PlaceBatchOrderBody,
+  PositionListResponse,
 } from "@axiom/contracts";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
@@ -12,6 +13,7 @@ import { CancelBatchOrders } from "../../application/trading/cancel-batch-orders
 import { PlaceBatchOrder } from "../../application/trading/place-batch-order.js";
 import { SyncBatchOrders } from "../../application/trading/sync-batch-orders.js";
 import { GetMarketQuote } from "../../application/market/get-market-quote.js";
+import { ListOpenPositions } from "../../application/positions/list-open-positions.js";
 import { requestContext } from "./auth-plugin.js";
 import { orderBatchDto } from "./presenters.js";
 
@@ -20,8 +22,26 @@ export function tradingRoutes(
   syncBatchOrders: SyncBatchOrders,
   cancelBatchOrders: CancelBatchOrders,
   getMarketQuote: GetMarketQuote,
+  listOpenPositions: ListOpenPositions,
 ): FastifyPluginAsyncTypebox {
   return async (app) => {
+    app.get(
+      "/positions",
+      { schema: { response: { 200: PositionListResponse } } },
+      async (request) => {
+        const result = await listOpenPositions.execute(requestContext(request));
+        return {
+          ...result,
+          items: result.items.map((position) => ({
+            ...position,
+            openedAt: position.openedAt?.toISOString() ?? null,
+            updatedAt: position.updatedAt.toISOString(),
+          })),
+          updatedAt: result.updatedAt.toISOString(),
+        };
+      },
+    );
+
     app.get(
       "/markets/quote",
       {

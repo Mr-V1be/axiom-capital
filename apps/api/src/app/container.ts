@@ -6,6 +6,7 @@ import { SyncAccountBalance } from "../application/accounts/sync-account-balance
 import { UpdateAccountAccess } from "../application/accounts/update-account-access.js";
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { GetMarketQuote } from "../application/market/get-market-quote.js";
+import { ListOpenPositions } from "../application/positions/list-open-positions.js";
 import { CreateSettlement } from "../application/settlements/create-settlement.js";
 import { GetSplitOverview } from "../application/settlements/get-split-overview.js";
 import { ListSettlements } from "../application/settlements/list-settlements.js";
@@ -83,6 +84,12 @@ export function createContainer(config: AppConfig) {
       ),
       getPortfolioOverview: new GetPortfolioOverview(accounts, balances, clock),
       getMarketQuote: new GetMarketQuote(exchanges.for("mexc")),
+      listOpenPositions: new ListOpenPositions(
+        accounts,
+        connectionAccess,
+        scheduler,
+        clock,
+      ),
       placeBatchOrder: new PlaceBatchOrder(
         accounts,
         balances,

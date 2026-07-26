@@ -14,6 +14,7 @@ import { MetricCard } from "../../shared/ui/MetricCard";
 import { routerStore } from "../../app/router-store";
 import { AccountsPreview } from "./AccountsPreview";
 import { EquityChart } from "./EquityChart";
+import { PositionsPanel } from "../positions/PositionsPanel";
 
 export default function DashboardPage() {
   const gateway = useDataGateway();
@@ -99,6 +100,8 @@ export default function DashboardPage() {
           icon={ShieldCheck}
         />
       </section>
+
+      <PositionsPanel />
 
       <section className="panel chart-panel">
         <header className="panel__header">

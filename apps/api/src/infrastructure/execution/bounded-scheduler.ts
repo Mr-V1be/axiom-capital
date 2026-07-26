@@ -1,6 +1,6 @@
-import { ExecutionScheduler } from "../../domain/trading/trading-ports.js";
+import { TaskScheduler } from "../../domain/shared/task-scheduler.js";
 
-export class BoundedExecutionScheduler implements ExecutionScheduler {
+export class BoundedExecutionScheduler implements TaskScheduler {
   constructor(private readonly concurrency: number) {
     if (!Number.isInteger(concurrency) || concurrency < 1) {
       throw new Error("Concurrency must be a positive integer");

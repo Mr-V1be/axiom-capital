@@ -1,4 +1,8 @@
-import type { InvestorAccountDto, SettlementDto } from "@axiom/contracts";
+import type {
+  InvestorAccountDto,
+  PositionDto,
+  SettlementDto,
+} from "@axiom/contracts";
 
 const money = (amount: string) => ({ amount, currency: "USDT" });
 export const demoNow = "2026-07-23T16:00:00.000Z";
@@ -73,6 +77,31 @@ export const demoAccounts: InvestorAccountDto[] = [
     createdAt: "2026-06-02T13:00:00.000Z",
   },
 ];
+
+export const demoPositions: PositionDto[] = [{
+  id: "demo-position-btc",
+  accountId: demoAccounts[0]!.id,
+  accountLabel: demoAccounts[0]!.label,
+  investorName: demoAccounts[0]!.investorName,
+  symbol: "BTC/USDT:USDT",
+  side: "long",
+  contracts: "18",
+  contractSize: "0.0001",
+  baseAmount: "0.0018",
+  entryPrice: "116240",
+  currentPrice: "118420.1",
+  liquidationPrice: "92210",
+  leverage: "10",
+  marginMode: "cross",
+  notional: "213.15618",
+  initialMargin: "20.9232",
+  unrealizedPnl: "3.92418",
+  realizedPnl: "-0.08",
+  roePercent: "18.756",
+  marginRatioPercent: "1.24",
+  openedAt: "2026-07-23T14:20:00.000Z",
+  updatedAt: demoNow,
+}];
 
 export const demoSettlements: SettlementDto[] = [
   {

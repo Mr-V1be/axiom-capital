@@ -29,9 +29,10 @@ live behind adapters. The web client consumes shared, versioned contracts.
 - A settlement cannot enter the funding workflow when its displayed share
   differs from the verified immutable Split configuration.
 
-The hosted UI uses a deterministic demo gateway. Real MEXC execution requires
-trade-only, withdrawal-disabled API keys and an IP allowlist. Real Splits
-funding requires a verified current-generation contract configuration.
+The hosted UI uses the API gateway and polls live MEXC quotes and open futures
+positions. Real execution requires trade-only, withdrawal-disabled API keys and
+an IP allowlist. Splits funding requires a verified current-generation contract
+configuration.
 
 ## Connection modes
 
