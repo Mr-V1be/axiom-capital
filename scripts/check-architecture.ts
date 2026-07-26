@@ -18,7 +18,9 @@ const violations: string[] = [];
 
 async function inspect(directory: string): Promise<void> {
   const entries = await readdir(directory, { withFileTypes: true });
-  const files = entries.filter((entry) => entry.isFile());
+  const files = entries.filter((entry) =>
+    entry.isFile() && sourceExtensions.has(extname(entry.name))
+  );
 
   if (files.length > 7) {
     violations.push(`${relative(root, directory)} contains ${files.length} files`);
@@ -26,7 +28,6 @@ async function inspect(directory: string): Promise<void> {
 
   await Promise.all(
     files.map(async (file) => {
-      if (!sourceExtensions.has(extname(file.name))) return;
       const path = join(directory, file.name);
       const lines = (await readFile(path, "utf8")).split("\n").length;
       if (lines > 250) {

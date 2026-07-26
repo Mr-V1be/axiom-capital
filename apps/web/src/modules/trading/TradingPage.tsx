@@ -30,17 +30,17 @@ export default function TradingPage() {
 
   useEffect(() => {
     if (!accounts.data) return;
-    const eligible = new Set(
-      accounts.data.items
-        .filter((account) =>
-          account.status === "connected" && account.permissions.trade
-        )
-        .map((account) => account.id),
+    const eligibleAccounts = accounts.data.items.filter((account) =>
+      account.status === "connected" &&
+      account.permissions.trade &&
+      Number(account.equity.amount) > 0
     );
+    const eligible = new Set(eligibleAccounts.map((account) => account.id));
     setSelected((current) => {
       if (!selectionInitialized.current) {
         selectionInitialized.current = true;
-        return eligible;
+        const types = new Set(eligibleAccounts.map((item) => item.marketType));
+        return types.size === 1 ? eligible : new Set();
       }
       return new Set([...current].filter((id) => eligible.has(id)));
     });
@@ -114,7 +114,9 @@ export default function TradingPage() {
             {(accounts.data?.items ?? []).map((account) => {
               const active = selected.has(account.id);
               const disabled =
-                account.status !== "connected" || !account.permissions.trade;
+                account.status !== "connected" ||
+                !account.permissions.trade ||
+                Number(account.equity.amount) <= 0;
               return (
                 <button
                   key={account.id}
@@ -192,12 +194,17 @@ export default function TradingPage() {
       <aside className="trading-ticket">
         <OrderTicket
           accountIds={[...selected]}
+          accountEquities={selectedAccounts.map((account) =>
+            Number(account.equity.amount)
+          )}
           totalEquity={equity}
           marketType={marketType ?? "spot"}
           mixedMarkets={marketTypes.size > 1}
           loading={order.status === "loading"}
           symbol={symbol}
           marketPrice={quote.data?.price ?? null}
+          minimumOrderAmount={quote.data?.minimumOrderAmount ?? null}
+          contractSize={quote.data?.contractSize ?? null}
           quoteLive={quote.status === "success"}
           onSymbolChange={setSymbol}
           onSubmit={submit}

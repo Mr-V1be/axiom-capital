@@ -125,6 +125,10 @@ export class DemoDataGateway implements DataGateway {
       symbol,
       marketType,
       price: symbol === "BTC/USDT" ? "118420.1" : "3640.25",
+      minimumOrderAmount: marketType === "swap" ? "1" : "0.000001",
+      contractSize: marketType === "swap"
+        ? symbol === "BTC/USDT" ? "0.0001" : "0.01"
+        : null,
       changePercent24h: 2.84,
       quoteVolume24h: "2410000000",
       updatedAt: new Date().toISOString(),

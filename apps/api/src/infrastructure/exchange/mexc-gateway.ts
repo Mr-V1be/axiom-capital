@@ -4,13 +4,13 @@ import { AccountCredentials } from "../../domain/accounts/account-ports.js";
 import { AccountAccessMode } from "../../domain/accounts/investor-account.js";
 import {
   ExchangeGateway,
-  ExchangeGatewayFactory,
   ExchangeOrderRequest,
   ExchangeOrderResult,
 } from "../../domain/exchange/exchange-gateway.js";
 import { ExternalServiceError } from "../../domain/shared/domain-error.js";
 import { MexcAccountInspector } from "./mexc-account-inspector.js";
 import { MexcMarketData } from "./mexc-market-data.js";
+import { MexcOrderSizer } from "./mexc-order-sizer.js";
 
 interface MexcAccountInfo {
   canTrade?: boolean;
@@ -18,6 +18,8 @@ interface MexcAccountInfo {
 }
 
 export class MexcGateway implements ExchangeGateway {
+  private readonly orderSizer = new MexcOrderSizer();
+
   private client(credentials: AccountCredentials): mexc {
     return new ccxt.mexc({
       apiKey: credentials.apiKey,
@@ -99,14 +101,18 @@ export class MexcGateway implements ExchangeGateway {
       if (!price || new Decimal(price).lessThanOrEqualTo(0)) {
         throw new Error("Unable to resolve executable price");
       }
-      const baseAmount = new Decimal(request.quoteAmount).dividedBy(price);
       const market = exchange.market(symbol);
-      const amountInUnits = credentials.marketType === "swap"
-        ? baseAmount.dividedBy(market.contractSize ?? 1)
-        : baseAmount;
-      const amount = Number(
-        exchange.amountToPrecision(symbol, amountInUnits.toString()),
-      );
+      const { amount } = this.orderSizer.calculate({
+        marketType: credentials.marketType,
+        quoteAmount: request.quoteAmount,
+        price,
+        ...(request.leverage ? { leverage: request.leverage } : {}),
+        ...(market.contractSize ? { contractSize: market.contractSize } : {}),
+        ...(market.limits.amount?.min
+          ? { minimumAmount: market.limits.amount.min }
+          : {}),
+        amountToPrecision: (value) => exchange.amountToPrecision(symbol, value),
+      });
       const parameters = {
         ...(credentials.marketType === "swap"
           ? { externalOid: request.clientOrderId }
@@ -232,14 +238,5 @@ export class MexcGateway implements ExchangeGateway {
     return new ExternalServiceError("mexc", message, {
       cause: error instanceof Error ? error : undefined,
     });
-  }
-}
-
-export class DefaultExchangeGatewayFactory implements ExchangeGatewayFactory {
-  constructor(private readonly mexcGateway: ExchangeGateway) {}
-
-  for(exchange: "mexc"): ExchangeGateway {
-    if (exchange === "mexc") return this.mexcGateway;
-    throw new Error(`Unsupported exchange: ${exchange satisfies never}`);
   }
 }

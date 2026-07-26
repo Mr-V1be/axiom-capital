@@ -7,12 +7,15 @@ import { validateOrder } from "./order-validation";
 
 interface Props {
   accountIds: readonly string[];
+  accountEquities: readonly number[];
   totalEquity: number;
   marketType?: "spot" | "swap";
   mixedMarkets: boolean;
   loading: boolean;
   symbol: string;
   marketPrice: string | null;
+  minimumOrderAmount: string | null;
+  contractSize: string | null;
   quoteLive: boolean;
   onSymbolChange(symbol: string): void;
   onSubmit(input: PlaceBatchOrderInput): Promise<void>;
@@ -20,12 +23,15 @@ interface Props {
 
 export function OrderTicket({
   accountIds,
+  accountEquities,
   totalEquity,
   marketType,
   mixedMarkets,
   loading,
   symbol,
   marketPrice,
+  minimumOrderAmount,
+  contractSize,
   quoteLive,
   onSymbolChange,
   onSubmit,
@@ -39,13 +45,10 @@ export function OrderTicket({
   const [fixedAmount, setFixedAmount] = useState("");
   const [price, setPrice] = useState("");
   const [leverage, setLeverage] = useState(1);
+  useEffect(() => { if (marketPrice) setPrice(marketPrice); }, [marketPrice, symbol]);
   useEffect(() => {
-    if (marketPrice) setPrice(marketPrice);
-  }, [marketPrice, symbol]);
-  useEffect(() => {
-    if (!fixedAmount && totalEquity > 0) {
+    if (!fixedAmount && totalEquity > 0)
       setFixedAmount(String(Math.min(totalEquity * 0.05, 1_000)));
-    }
   }, [fixedAmount, totalEquity]);
   const amount = useMemo(
     () => allocationMode === "fixed_quote"
@@ -54,16 +57,20 @@ export function OrderTicket({
     [allocationMode, allocation, fixedAmount, totalEquity],
   );
   const validation = validateOrder({
-    accountCount: accountIds.length,
+    accountEquities,
     totalEquity,
     mixedMarkets,
     amount,
     allocationMode,
     allocationPercent: allocation,
+    marketType: marketType ?? "spot",
+    leverage,
     type,
     limitPrice: Number(price),
+    marketPrice: Number(marketPrice),
+    minimumOrderAmount: minimumOrderAmount ? Number(minimumOrderAmount) : null,
+    contractSize: contractSize ? Number(contractSize) : null,
   });
-
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!validation.valid) return;
@@ -150,7 +157,11 @@ export function OrderTicket({
       </div>
       <div className="form-grid">
         <label className="field">
-          <span>{allocationMode === "fixed_quote" ? "Общая сумма" : "Доля счёта"}</span>
+          <span>
+            {allocationMode === "fixed_quote"
+              ? marketType === "swap" ? "Общая маржа" : "Общая сумма"
+              : marketType === "swap" ? "Доля маржи" : "Доля счёта"}
+          </span>
           <div className="input-suffix">
             <input
               type="number"
@@ -195,8 +206,11 @@ export function OrderTicket({
       )}
       <div className="allocation-preview">
         <div>
-          <span>Сумма по выбранным счетам</span>
-          <strong>{formatMoney(amount)}</strong>
+          <span>{marketType === "swap" ? "Маржа / позиция" : "Сумма по счетам"}</span>
+          <strong>
+            {formatMoney(amount)}
+            {marketType === "swap" && ` / ${formatMoney(amount * leverage)}`}
+          </strong>
         </div>
         <div>
           <span>Счетов в исполнении</span>

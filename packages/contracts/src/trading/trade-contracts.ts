@@ -89,6 +89,8 @@ export const MarketQuoteResponse = Type.Object({
     Type.Literal("swap"),
   ]),
   price: Type.String(),
+  minimumOrderAmount: Type.Union([Type.String(), Type.Null()]),
+  contractSize: Type.Union([Type.String(), Type.Null()]),
   changePercent24h: Type.Union([Type.Number(), Type.Null()]),
   quoteVolume24h: Type.Union([Type.String(), Type.Null()]),
   updatedAt: IsoDateTime,

@@ -16,6 +16,7 @@ export class MexcMarketData {
       await exchange.loadMarkets();
       const resolved = this.symbol(symbol, marketType);
       const ticker = await exchange.fetchTicker(resolved);
+      const market = exchange.market(resolved);
       const price = ticker.last ?? ticker.close;
       if (price === undefined || !new Decimal(price).isPositive()) {
         throw new Error("MEXC returned no positive market price");
@@ -24,6 +25,14 @@ export class MexcMarketData {
         symbol,
         marketType,
         price: new Decimal(price).toFixed(),
+        minimumOrderAmount:
+          typeof market.limits.amount?.min === "number"
+            ? new Decimal(market.limits.amount.min).toFixed()
+            : null,
+        contractSize:
+          market.contract && typeof market.contractSize === "number"
+            ? new Decimal(market.contractSize).toFixed()
+            : null,
         changePercent24h:
           typeof ticker.percentage === "number" ? ticker.percentage : null,
         quoteVolume24h:

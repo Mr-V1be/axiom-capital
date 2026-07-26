@@ -13,6 +13,8 @@ it("returns a normalized quote from the configured exchange", async () => {
         symbol,
         marketType,
         price: "118420.1",
+        minimumOrderAmount: null,
+        contractSize: null,
         changePercent24h: 2.84,
         quoteVolume24h: "2410000000",
         updatedAt: new Date("2026-07-25T20:00:00.000Z"),

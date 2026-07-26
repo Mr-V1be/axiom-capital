@@ -18,10 +18,8 @@ import { AccountRiskPolicy, CompositeRiskPolicy } from "../domain/risk/risk-prof
 import { SystemClock } from "../domain/shared/id.js";
 import { ProportionalAllocationStrategy } from "../domain/trading/allocation-plan.js";
 import { AppConfig } from "../infrastructure/config/app-config.js";
-import {
-  DefaultExchangeGatewayFactory,
-  MexcGateway,
-} from "../infrastructure/exchange/mexc-gateway.js";
+import { DefaultExchangeGatewayFactory } from "../infrastructure/exchange/default-exchange-gateway-factory.js";
+import { MexcGateway } from "../infrastructure/exchange/mexc-gateway.js";
 import { BoundedExecutionScheduler } from "../infrastructure/execution/bounded-scheduler.js";
 import { NanoIdGenerator } from "../infrastructure/ids/nanoid-generator.js";
 import { PrismaAccountRepository } from "../infrastructure/persistence/account-repository.js";

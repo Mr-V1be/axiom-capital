@@ -1,12 +1,17 @@
 interface OrderValidationInput {
-  accountCount: number;
+  accountEquities: readonly number[];
   totalEquity: number;
   mixedMarkets: boolean;
   amount: number;
   allocationMode: "equity_percentage" | "fixed_quote";
   allocationPercent: number;
+  marketType: "spot" | "swap";
+  leverage: number;
   type: "market" | "limit";
   limitPrice: number;
+  marketPrice: number;
+  minimumOrderAmount: number | null;
+  contractSize: number | null;
 }
 
 export interface OrderValidation {
@@ -15,7 +20,7 @@ export interface OrderValidation {
 }
 
 export function validateOrder(input: OrderValidationInput): OrderValidation {
-  if (input.accountCount === 0) {
+  if (input.accountEquities.length === 0) {
     return { valid: false, message: "Выберите счёт с режимом Trade" };
   }
   if (input.mixedMarkets) {
@@ -52,8 +57,43 @@ export function validateOrder(input: OrderValidationInput): OrderValidation {
   ) {
     return { valid: false, message: "Укажите положительную лимитную цену" };
   }
+  const minimumError = validateSwapMinimum(input);
+  if (minimumError) return minimumError;
+
   return {
     valid: true,
-    message: "Сумма распределится пропорционально капиталу счетов",
+    message: input.marketType === "swap"
+      ? `Маржа ${input.amount.toFixed(2)} USDT · позиция ${(input.amount * input.leverage).toFixed(2)} USDT`
+      : "Сумма распределится пропорционально капиталу счетов",
   };
+}
+
+function validateSwapMinimum(
+  input: OrderValidationInput,
+): OrderValidation | null {
+  if (
+    input.marketType !== "swap" ||
+    !input.minimumOrderAmount ||
+    !input.contractSize
+  ) return null;
+
+  const price = input.type === "limit" ? input.limitPrice : input.marketPrice;
+  if (!Number.isFinite(price) || price <= 0) {
+    return { valid: false, message: "Дождитесь актуальной котировки MEXC" };
+  }
+  const minimumNotional = input.minimumOrderAmount * input.contractSize * price;
+  const margins = input.allocationMode === "fixed_quote"
+    ? input.accountEquities.map((equity) =>
+      input.amount * equity / input.totalEquity
+    )
+    : input.accountEquities.map((equity) =>
+      equity * input.allocationPercent / 100
+    );
+  if (margins.some((margin) => margin * input.leverage < minimumNotional)) {
+    return {
+      valid: false,
+      message: `Минимум MEXC — ${minimumNotional.toFixed(2)} USDT позиции на каждый счёт`,
+    };
+  }
+  return null;
 }

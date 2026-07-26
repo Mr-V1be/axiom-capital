@@ -81,6 +81,8 @@ export interface ExchangeMarketQuote {
   symbol: string;
   marketType: "spot" | "swap";
   price: string;
+  minimumOrderAmount: string | null;
+  contractSize: string | null;
   changePercent24h: number | null;
   quoteVolume24h: string | null;
   updatedAt: Date;
