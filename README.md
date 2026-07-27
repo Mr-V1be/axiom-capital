@@ -2,6 +2,8 @@
 
 Production-oriented multi-account trading and profit-settlement platform.
 
+Licensed under the [MIT License](LICENSE).
+
 ## Architecture
 
 The repository is a modular monolith with explicit bounded contexts:
