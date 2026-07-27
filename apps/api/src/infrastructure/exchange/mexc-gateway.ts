@@ -17,6 +17,7 @@ import { MexcPositionMapper } from "./mexc/position-mapper.js";
 import { MexcActivityReader } from "./mexc/activity-reader.js";
 import { MexcPositionController, validatePositionAction } from "./mexc/position-controller.js";
 import { toMexcExternalOrderId } from "./mexc/external-order-id.js";
+import { MexcOrderCanceller } from "./mexc/cancellation/order-canceller.js";
 interface MexcAccountInfo {
   canTrade?: boolean;
   canWithdraw?: boolean;
@@ -25,6 +26,7 @@ export class MexcGateway implements ExchangeGateway {
   private readonly orderSizer = new MexcOrderSizer();
   private readonly orderNormalizer = new MexcOrderNormalizer();
   private readonly positionMapper = new MexcPositionMapper();
+  private readonly orderCanceller = new MexcOrderCanceller();
   private client(credentials: AccountCredentials): mexc {
     return new ccxt.mexc({
       apiKey: credentials.apiKey,
@@ -51,7 +53,6 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "Unable to verify MEXC API permissions");
     }
   }
-
   async fetchBalance(credentials: AccountCredentials) {
     try {
       const balance = await this.client(credentials).fetchBalance();
@@ -69,7 +70,6 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "Unable to fetch MEXC balance");
     }
   }
-
   async fetchOpenPositions(credentials: AccountCredentials): Promise<number> {
     return (await this.fetchPositions(credentials)).length;
   }
@@ -191,7 +191,7 @@ export class MexcGateway implements ExchangeGateway {
       const exchange = this.client(credentials);
       const symbol = this.symbol(reference.symbol, credentials.marketType);
       await exchange.loadMarkets();
-      await exchange.cancelOrder(reference.orderId, symbol);
+      await this.orderCanceller.cancel(exchange, reference.orderId, symbol);
       return cancelledOrder(reference.orderId);
     } catch (error) {
       throw this.wrap(error, "Unable to cancel MEXC order");
