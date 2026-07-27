@@ -11,6 +11,7 @@ import { errorHandler } from "../interfaces/http/error-handler.js";
 import { portfolioRoutes } from "../interfaces/http/portfolio-routes.js";
 import { settlementRoutes } from "../interfaces/http/settlement-routes.js";
 import { tradingRoutes } from "../interfaces/http/trading-routes.js";
+import { riskRoutes } from "../interfaces/http/risk/risk-routes.js";
 import { AppContainer } from "./container.js";
 
 export async function buildApp(config: AppConfig, container: AppContainer) {
@@ -58,6 +59,12 @@ export async function buildApp(config: AppConfig, container: AppContainer) {
     async (protectedApp) => {
       await authPlugin(config.auth)(protectedApp, {});
       await protectedApp.register(accountRoutes(container.useCases));
+      await protectedApp.register(
+        riskRoutes(
+          container.useCases.getRiskProfile,
+          container.useCases.updateRiskProfile,
+        ),
+      );
       await protectedApp.register(
         portfolioRoutes(container.useCases.getPortfolioOverview),
       );

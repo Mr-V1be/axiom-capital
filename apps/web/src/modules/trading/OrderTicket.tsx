@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { formatMoney } from "../../shared/format/formatters";
 import { Button } from "../../shared/ui/Button";
 import { validateOrder } from "./order-validation";
-
 interface Props {
   accountIds: readonly string[];
   accountEquities: readonly number[];
@@ -17,10 +16,10 @@ interface Props {
   minimumOrderAmount: string | null;
   contractSize: string | null;
   quoteLive: boolean;
+  maxAllocationPercent: number;
   onSymbolChange(symbol: string): void;
   onSubmit(input: PlaceBatchOrderInput): Promise<void>;
 }
-
 export function OrderTicket({
   accountIds,
   accountEquities,
@@ -33,6 +32,7 @@ export function OrderTicket({
   minimumOrderAmount,
   contractSize,
   quoteLive,
+  maxAllocationPercent,
   onSymbolChange,
   onSubmit,
 }: Props) {
@@ -70,6 +70,7 @@ export function OrderTicket({
     marketPrice: Number(marketPrice),
     minimumOrderAmount: minimumOrderAmount ? Number(minimumOrderAmount) : null,
     contractSize: contractSize ? Number(contractSize) : null,
+    maxAllocationPercent,
   });
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -92,7 +93,6 @@ export function OrderTicket({
       : { ...common, allocationMode, allocationPercent: allocation };
     await onSubmit(input);
   };
-
   return (
     <form className="order-ticket panel" onSubmit={submit}>
       <header className="panel__header">
@@ -127,8 +127,7 @@ export function OrderTicket({
           value={symbol}
           onChange={(event) => onSymbolChange(event.target.value)}
         >
-          <option>BTC/USDT</option>
-          <option>ETH/USDT</option>
+          <option>BTC/USDT</option><option>ETH/USDT</option>
         </select>
       </label>
       <div className="form-grid">
@@ -138,8 +137,7 @@ export function OrderTicket({
             value={type}
             onChange={(event) => setType(event.target.value as "market" | "limit")}
           >
-            <option value="market">Market</option>
-            <option value="limit">Limit</option>
+            <option value="market">Market</option><option value="limit">Limit</option>
           </select>
         </label>
         <label className="field">
@@ -166,7 +164,9 @@ export function OrderTicket({
             <input
               type="number"
               min={0.1}
-              max={allocationMode === "fixed_quote" ? totalEquity : 10}
+              max={allocationMode === "fixed_quote"
+                ? totalEquity
+                : maxAllocationPercent}
               step={0.1}
               value={allocationMode === "fixed_quote" ? fixedAmount : allocation}
               onChange={(event) => allocationMode === "fixed_quote"

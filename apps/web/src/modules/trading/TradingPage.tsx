@@ -59,6 +59,11 @@ export default function TradingPage() {
   );
   const marketTypes = new Set(selectedAccounts.map((item) => item.marketType));
   const marketType = selectedAccounts[0]?.marketType;
+  const maxAllocationPercent = selectedAccounts.length > 0
+    ? Math.min(...selectedAccounts.map(
+      (account) => account.riskProfile?.maxAllocationPercent ?? 10,
+    ))
+    : 10;
   const quote = usePollingQuery(
     (signal) =>
       gateway.getMarketQuote(symbol, marketType ?? "spot", signal),
@@ -213,6 +218,7 @@ export default function TradingPage() {
           minimumOrderAmount={quote.data?.minimumOrderAmount ?? null}
           contractSize={quote.data?.contractSize ?? null}
           quoteLive={quote.status === "success"}
+          maxAllocationPercent={maxAllocationPercent}
           onSymbolChange={setSymbol}
           onSubmit={submit}
         />

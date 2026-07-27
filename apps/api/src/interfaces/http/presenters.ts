@@ -4,6 +4,7 @@ import { SettlementState } from "../../domain/settlements/settlement.js";
 import { SplitConfigurationState } from "../../domain/settlements/settlement-ports.js";
 import { OrderBatchState } from "../../domain/trading/order.js";
 import { ExchangeAccountDetails } from "../../domain/exchange/exchange-gateway.js";
+import { RiskProfile } from "../../domain/risk/risk-profile.js";
 
 const money = (value: { toString(): string; currency: string }) => ({
   amount: value.toString(),
@@ -13,6 +14,7 @@ const money = (value: { toString(): string; currency: string }) => ({
 export function accountDto(
   account: Readonly<InvestorAccountState>,
   balance: BalanceSnapshot | null,
+  riskProfile?: RiskProfile,
 ) {
   const currency = balance?.equity.currency ?? "USDT";
   return {
@@ -35,10 +37,18 @@ export function accountDto(
       trade: account.accessMode === "trade",
       withdraw: false as const,
     },
+    ...(riskProfile ? { riskProfile: riskProfileDto(riskProfile) } : {}),
     ...(account.lastSyncedAt
       ? { lastSyncedAt: account.lastSyncedAt.toISOString() }
       : {}),
     createdAt: account.createdAt.toISOString(),
+  };
+}
+
+export function riskProfileDto(profile: RiskProfile) {
+  return {
+    ...profile,
+    allowedSymbols: [...profile.allowedSymbols],
   };
 }
 

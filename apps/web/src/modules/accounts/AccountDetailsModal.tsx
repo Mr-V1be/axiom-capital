@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "../../shared/hooks/use-async";
 import { Button } from "../../shared/ui/Button";
 import { Modal } from "../../shared/ui/Modal";
 import { AccountDetailsContent } from "./AccountDetailsContent";
+import { RiskProfileForm } from "./RiskProfileForm";
 
 interface Props {
   account: InvestorAccountDto;
@@ -18,6 +19,13 @@ export function AccountDetailsModal({ account, onUpdated, onClose }: Props) {
     (signal) => gateway.getAccountDetails(account.id, signal),
     [gateway, account.id],
   );
+  const risk = useQuery(
+    (signal) => gateway.getRiskProfile(account.id, signal),
+    [gateway, account.id],
+  );
+  const riskUpdate = useMutation((maxAllocationPercent: number) =>
+    gateway.updateRiskProfile(account.id, { maxAllocationPercent })
+  );
   const access = useMutation((accessMode: "read_only" | "trade") =>
     gateway.updateAccountAccess(account.id, accessMode)
   );
@@ -28,6 +36,10 @@ export function AccountDetailsModal({ account, onUpdated, onClose }: Props) {
   const enableTrading = async () => {
     await access.execute("trade");
     await Promise.all([query.refresh(), onUpdated()]);
+  };
+  const saveRisk = async (maxAllocationPercent: number) => {
+    await riskUpdate.execute(maxAllocationPercent);
+    await Promise.all([risk.refresh(), onUpdated()]);
   };
 
   return (
@@ -58,6 +70,13 @@ export function AccountDetailsModal({ account, onUpdated, onClose }: Props) {
         </>
       }
     >
+      <RiskProfileForm
+        profile={risk.data}
+        loading={risk.status === "loading"}
+        saving={riskUpdate.status === "loading"}
+        error={risk.error ?? riskUpdate.error}
+        onSave={saveRisk}
+      />
       {query.status === "loading" && !details && (
         <div className="account-details-state">
           <RefreshCw className="spin" size={20} />

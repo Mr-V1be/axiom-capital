@@ -12,7 +12,12 @@ export interface RiskProfile {
 
 export interface RiskProfileRepository {
   get(accountId: string): Promise<RiskProfile>;
+  getMany(accountIds: readonly string[]): Promise<ReadonlyMap<string, RiskProfile>>;
   createDefaults(accountId: string): Promise<void>;
+  updateMaxAllocation(
+    accountId: string,
+    maxAllocationPercent: number,
+  ): Promise<RiskProfile>;
 }
 
 export class AccountRiskPolicy implements RiskPolicy {

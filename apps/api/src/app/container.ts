@@ -4,6 +4,8 @@ import { ListAccounts } from "../application/accounts/list-accounts.js";
 import { GetAccountDetails } from "../application/accounts/get-account-details.js";
 import { SyncAccountBalance } from "../application/accounts/sync-account-balance.js";
 import { UpdateAccountAccess } from "../application/accounts/update-account-access.js";
+import { GetRiskProfile } from "../application/risk/get-risk-profile.js";
+import { UpdateRiskProfile } from "../application/risk/update-risk-profile.js";
 import { GetPortfolioOverview } from "../application/portfolio/get-overview.js";
 import { GetMarketQuote } from "../application/market/get-market-quote.js";
 import { ListOpenPositions } from "../application/positions/list-open-positions.js";
@@ -72,7 +74,9 @@ export function createContainer(config: AppConfig) {
         ids,
         clock,
       ),
-      listAccounts: new ListAccounts(accounts, balances),
+      listAccounts: new ListAccounts(accounts, balances, riskProfiles),
+      getRiskProfile: new GetRiskProfile(accounts, riskProfiles),
+      updateRiskProfile: new UpdateRiskProfile(accounts, riskProfiles, audit),
       getAccountDetails: new GetAccountDetails(connectionAccess, balances),
       syncAccountBalance: new SyncAccountBalance(
         accounts,

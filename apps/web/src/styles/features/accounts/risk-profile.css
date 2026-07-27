@@ -1,0 +1,58 @@
+.risk-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 18px;
+  padding: 15px;
+  border: 1px solid rgba(200, 255, 77, 0.18);
+  border-radius: 11px;
+  background: rgba(200, 255, 77, 0.035);
+}
+
+.risk-profile__heading,
+.risk-profile__controls,
+.risk-profile__confirmation {
+  display: flex;
+  align-items: center;
+}
+
+.risk-profile__heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.risk-profile__heading h3 {
+  margin-top: 3px;
+  font-size: 13px;
+}
+
+.risk-profile__current {
+  color: var(--accent);
+  font-size: 19px;
+}
+
+.risk-profile > p {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.risk-profile__controls {
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.risk-profile__controls .field {
+  flex: 1;
+}
+
+.risk-profile__confirmation {
+  gap: 8px;
+  color: var(--warning);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.risk-profile__confirmation input {
+  accent-color: var(--accent);
+}

@@ -16,6 +16,7 @@ const validInput = {
   marketPrice: 118_000,
   minimumOrderAmount: 0.000001,
   contractSize: null,
+  maxAllocationPercent: 10,
 };
 
 describe("order validation", () => {
@@ -33,6 +34,15 @@ describe("order validation", () => {
 
   it("accepts a funded order within the risk limit", () => {
     assert.equal(validateOrder(validInput).valid, true);
+  });
+
+  it("uses a configured risk limit above the default", () => {
+    const result = validateOrder({
+      ...validInput,
+      amount: 2_500,
+      maxAllocationPercent: 25,
+    });
+    assert.equal(result.valid, true);
   });
 
   it("accepts a minimum BTC contract when leverage makes it large enough", () => {

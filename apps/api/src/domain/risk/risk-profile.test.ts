@@ -15,7 +15,16 @@ const profiles: RiskProfileRepository = {
       tradingEnabled: true,
     };
   },
+  async getMany() {
+    return new Map();
+  },
   async createDefaults() {},
+  async updateMaxAllocation(accountId, maxAllocationPercent) {
+    return {
+      ...(await this.get(accountId)),
+      maxAllocationPercent,
+    };
+  },
 };
 
 const account = InvestorAccount.create({

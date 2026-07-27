@@ -1,5 +1,6 @@
 import { Static, Type } from "@sinclair/typebox";
 import { EntityId, IsoDateTime, Money } from "../common/primitives.js";
+import { RiskProfileResponse } from "./risk-contracts.js";
 
 export const ExchangeName = Type.Union([Type.Literal("mexc")]);
 export const AccountScope = Type.Union([
@@ -39,6 +40,7 @@ export const InvestorAccount = Type.Object({
     trade: Type.Boolean(),
     withdraw: Type.Literal(false),
   }),
+  riskProfile: Type.Optional(RiskProfileResponse),
   lastSyncedAt: Type.Optional(IsoDateTime),
   createdAt: IsoDateTime,
 });

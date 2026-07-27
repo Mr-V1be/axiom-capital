@@ -45,8 +45,8 @@ export function accountRoutes(
           },
         );
         return {
-          items: result.items.map(({ account, balance }) =>
-            accountDto(account, balance),
+          items: result.items.map(({ account, balance, riskProfile }) =>
+            accountDto(account, balance, riskProfile),
           ),
           ...(result.nextCursor ? { nextCursor: result.nextCursor } : {}),
         };

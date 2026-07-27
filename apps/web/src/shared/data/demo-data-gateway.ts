@@ -7,6 +7,7 @@ import type {
   PlaceBatchOrderInput,
   PositionActionInput,
   ProvisionTestSplitInput,
+  UpdateRiskProfileInput,
 } from "@axiom/contracts";
 import { DataGateway } from "./data-gateway";
 import { demoAccounts, demoNow, demoPositions } from "./demo-seed";
@@ -152,6 +153,33 @@ export class DemoDataGateway implements DataGateway {
       item.id === accountId ? updated : item
     );
     return updated;
+  }
+
+  async getRiskProfile(accountId: string) {
+    const account = this.accounts.find((item) => item.id === accountId);
+    if (!account) throw new Error("Account not found");
+    return account.riskProfile ?? {
+      accountId,
+      maxAllocationPercent: 10,
+      maxDailyLossPercent: 3,
+      maxOpenPositions: 5,
+      allowedSymbols: ["BTC/USDT", "ETH/USDT"],
+      tradingEnabled: true,
+    };
+  }
+
+  async updateRiskProfile(
+    accountId: string,
+    input: UpdateRiskProfileInput,
+  ) {
+    const profile = {
+      ...(await this.getRiskProfile(accountId)),
+      maxAllocationPercent: input.maxAllocationPercent,
+    };
+    this.accounts = this.accounts.map((item) =>
+      item.id === accountId ? { ...item, riskProfile: profile } : item
+    );
+    return profile;
   }
 
   async getMarketQuote(symbol: string, marketType: "spot" | "swap") {

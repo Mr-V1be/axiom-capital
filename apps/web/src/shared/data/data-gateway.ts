@@ -16,9 +16,11 @@ import type {
   PositionActionInput,
   PortfolioOverviewDto,
   ProvisionTestSplitInput,
+  RiskProfileDto,
   SettlementDto,
   SplitConfigurationDto,
   SplitOverviewDto,
+  UpdateRiskProfileInput,
 } from "@axiom/contracts";
 
 export interface DataGateway {
@@ -45,6 +47,14 @@ export interface DataGateway {
     accountId: string,
     accessMode: "read_only" | "trade",
   ): Promise<InvestorAccountDto>;
+  getRiskProfile(
+    accountId: string,
+    signal?: AbortSignal,
+  ): Promise<RiskProfileDto>;
+  updateRiskProfile(
+    accountId: string,
+    input: UpdateRiskProfileInput,
+  ): Promise<RiskProfileDto>;
   getMarketQuote(
     symbol: string,
     marketType: "spot" | "swap",

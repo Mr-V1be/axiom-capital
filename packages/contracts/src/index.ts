@@ -1,4 +1,5 @@
 export * from "./accounts/account-contracts.js";
+export * from "./accounts/risk-contracts.js";
 export * from "./common/primitives.js";
 export * from "./portfolio/portfolio-contracts.js";
 export * from "./positions/position-contracts.js";

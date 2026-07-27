@@ -15,8 +15,40 @@ export class PrismaRiskProfileRepository implements RiskProfileRepository {
   async get(accountId: string): Promise<RiskProfile> {
     const row = await this.db.riskProfile.findUnique({ where: { accountId } });
     if (!row) throw new NotFoundError("RiskProfile", accountId);
+    return this.toDomain(row);
+  }
+
+  async getMany(
+    accountIds: readonly string[],
+  ): Promise<ReadonlyMap<string, RiskProfile>> {
+    if (accountIds.length === 0) return new Map();
+    const rows = await this.db.riskProfile.findMany({
+      where: { accountId: { in: [...accountIds] } },
+    });
+    return new Map(rows.map((row) => [row.accountId, this.toDomain(row)]));
+  }
+
+  async updateMaxAllocation(
+    accountId: string,
+    maxAllocationPercent: number,
+  ): Promise<RiskProfile> {
+    const row = await this.db.riskProfile.update({
+      where: { accountId },
+      data: { maxAllocationPct: maxAllocationPercent },
+    });
+    return this.toDomain(row);
+  }
+
+  private toDomain(row: {
+    accountId: string;
+    maxAllocationPct: { toString(): string };
+    maxDailyLossPct: { toString(): string };
+    maxOpenPositions: number;
+    allowedSymbols: string[];
+    tradingEnabled: boolean;
+  }): RiskProfile {
     return {
-      accountId,
+      accountId: row.accountId,
       maxAllocationPercent: Number(row.maxAllocationPct),
       maxDailyLossPercent: Number(row.maxDailyLossPct),
       maxOpenPositions: row.maxOpenPositions,

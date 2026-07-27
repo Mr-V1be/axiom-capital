@@ -12,6 +12,7 @@ interface OrderValidationInput {
   marketPrice: number;
   minimumOrderAmount: number | null;
   contractSize: number | null;
+  maxAllocationPercent: number;
 }
 
 export interface OrderValidation {
@@ -43,12 +44,16 @@ export function validateOrder(input: OrderValidationInput): OrderValidation {
   }
   const portfolioPercent = input.amount / input.totalEquity * 100;
   if (
-    input.allocationPercent > 10 ||
-    (input.allocationMode === "fixed_quote" && portfolioPercent > 10)
+    input.allocationPercent > input.maxAllocationPercent ||
+    (
+      input.allocationMode === "fixed_quote" &&
+      portfolioPercent > input.maxAllocationPercent
+    )
   ) {
     return {
       valid: false,
-      message: "Текущий риск-лимит — не более 10% капитала счёта",
+      message:
+        `Текущий риск-лимит — не более ${input.maxAllocationPercent}% капитала счёта`,
     };
   }
   if (

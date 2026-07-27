@@ -16,9 +16,11 @@ import type {
   PositionActionInput,
   PortfolioOverviewDto,
   ProvisionTestSplitInput,
+  RiskProfileDto,
   SettlementDto,
   SplitConfigurationDto,
   SplitOverviewDto,
+  UpdateRiskProfileInput,
 } from "@axiom/contracts";
 import { SessionStore } from "../auth/session-store";
 import { DataGateway } from "./data-gateway";
@@ -116,6 +118,20 @@ export class HttpDataGateway implements DataGateway {
         method: "PATCH",
         body: JSON.stringify({ accessMode }),
       },
+    );
+  }
+
+  getRiskProfile(accountId: string, signal?: AbortSignal) {
+    return this.request<RiskProfileDto>(
+      `/v1/accounts/${encodeURIComponent(accountId)}/risk`,
+      { ...(signal ? { signal } : {}) },
+    );
+  }
+
+  updateRiskProfile(accountId: string, input: UpdateRiskProfileInput) {
+    return this.request<RiskProfileDto>(
+      `/v1/accounts/${encodeURIComponent(accountId)}/risk`,
+      { method: "PATCH", body: JSON.stringify(input) },
     );
   }
 

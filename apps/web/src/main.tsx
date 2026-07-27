@@ -12,6 +12,7 @@ import "./styles/forms.css";
 import "./styles/features/dashboard.css";
 import "./styles/features/accounts.css";
 import "./styles/features/account-details.css";
+import "./styles/features/accounts/risk-profile.css";
 import "./styles/features/trading.css";
 import "./styles/features/trading/order-ticket.css";
 import "./styles/features/positions.css";
