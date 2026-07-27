@@ -42,7 +42,7 @@ export class MexcOrderNormalizer {
     const price = decimal(order.average ?? order.price ?? info.price);
     const totalContracts = decimal(info.vol ?? order.amount);
     const filledContracts = decimal(info.dealVol ?? order.filled);
-    const fillRatio = totalContracts.isPositive()
+    const fillRatio = totalContracts.greaterThan(0)
       ? Decimal.min(Decimal.max(filledContracts.div(totalContracts), 0), 1)
       : new Decimal(order.status === "closed" ? 1 : 0);
     const reportedMargin = optionalDecimal(
@@ -51,7 +51,7 @@ export class MexcOrderNormalizer {
     const allocated = requestedQuote
       ? decimal(requestedQuote)
       : reportedMargin ?? new Decimal(0);
-    const status = normalizeStatus(order.status, fillRatio.isPositive());
+    const status = normalizeStatus(order.status, fillRatio.greaterThan(0));
     const filled = status === "filled" && reportedMargin
       ? reportedMargin
       : allocated.times(fillRatio);
@@ -83,7 +83,7 @@ function result(
     status,
     filledQuote: filled.toFixed(),
     remainingQuote: remaining.toFixed(),
-    ...(price.isPositive() ? { averagePrice: price.toFixed() } : {}),
+    ...(price.greaterThan(0) ? { averagePrice: price.toFixed() } : {}),
   };
 }
 

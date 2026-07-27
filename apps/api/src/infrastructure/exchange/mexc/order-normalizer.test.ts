@@ -38,6 +38,17 @@ describe("MexcOrderNormalizer", () => {
     assert.equal(order.remainingQuote, "0.25");
   });
 
+  it("normalizes an acknowledgement-only futures response", () => {
+    const order = new MexcOrderNormalizer().normalize({
+      id: "accepted-order",
+    }, "swap", "0.35");
+
+    assert.equal(order.status, "accepted");
+    assert.equal(order.filledQuote, "0");
+    assert.equal(order.remainingQuote, "0.35");
+    assert.equal(order.averagePrice, undefined);
+  });
+
   it("preserves quote normalization for spot orders", () => {
     const order = new MexcOrderNormalizer().normalize({
       id: "spot",
