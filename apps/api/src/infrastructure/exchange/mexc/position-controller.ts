@@ -4,6 +4,7 @@ import {
   PositionActionRequest,
   PositionActionResult,
 } from "../../../domain/exchange/exchange-gateway.js";
+import { toMexcExternalOrderId } from "./external-order-id.js";
 
 export class MexcPositionController {
   constructor(private readonly exchange: mexc) {}
@@ -34,7 +35,7 @@ export class MexcPositionController {
       {
         reduceOnly: true,
         positionId: request.position.id,
-        externalOid: request.clientOrderId,
+        externalOid: toMexcExternalOrderId(request.clientOrderId),
       },
     );
     if (!order.id) throw new Error("MEXC returned no close order identifier");
@@ -89,7 +90,7 @@ export class MexcPositionController {
       {
         reduceOnly: true,
         positionId: request.position.id,
-        externalOid: request.clientOrderId,
+        externalOid: toMexcExternalOrderId(request.clientOrderId),
         triggerPrice: Number(request.triggerPrice),
         triggerType: triggerType(request),
         executeCycle: 2,

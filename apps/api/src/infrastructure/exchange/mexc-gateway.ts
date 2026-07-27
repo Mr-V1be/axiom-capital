@@ -16,6 +16,7 @@ import { MexcOrderNormalizer } from "./mexc/order-normalizer.js";
 import { MexcPositionMapper } from "./mexc/position-mapper.js";
 import { MexcActivityReader } from "./mexc/activity-reader.js";
 import { MexcPositionController, validatePositionAction } from "./mexc/position-controller.js";
+import { toMexcExternalOrderId } from "./mexc/external-order-id.js";
 
 interface MexcAccountInfo {
   canTrade?: boolean;
@@ -137,7 +138,7 @@ export class MexcGateway implements ExchangeGateway {
       });
       const parameters = {
         ...(credentials.marketType === "swap"
-          ? { externalOid: request.clientOrderId }
+          ? { externalOid: toMexcExternalOrderId(request.clientOrderId) }
           : { clientOrderId: request.clientOrderId }),
         ...(request.leverage ? { leverage: request.leverage } : {}),
         ...(request.marginMode ? { marginMode: request.marginMode } : {}),

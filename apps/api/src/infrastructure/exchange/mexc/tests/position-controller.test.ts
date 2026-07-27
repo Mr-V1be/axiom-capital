@@ -46,11 +46,11 @@ describe("MexcPositionController", () => {
 
     assert.equal(call[2], "sell");
     assert.equal(call[3], 1);
-    assert.deepEqual(call[5], {
-      reduceOnly: true,
-      positionId: "position-1",
-      externalOid: "command-key",
-    });
+    const parameters = call[5] as Record<string, unknown>;
+    assert.equal(parameters.reduceOnly, true);
+    assert.equal(parameters.positionId, "position-1");
+    assert.match(String(parameters.externalOid), /^ax_[a-f0-9]{29}$/);
+    assert.equal(String(parameters.externalOid).length, 32);
   });
 
   it("uses a downward market trigger for a long stop loss", async () => {
