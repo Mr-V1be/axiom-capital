@@ -40,17 +40,17 @@ export class CancelBatchOrders {
           context.tenantId,
           current.accountId,
         );
-        const result = await gateway.cancelOrder(credentials, {
+        await gateway.cancelOrder(credentials, {
           orderId: current.exchangeOrderId,
           symbol: state.symbol,
         });
         order.applyExecution({
-          exchangeOrderId: result.orderId,
-          status: result.status,
-          filled: Money.of(result.filledQuote, current.allocated.currency),
-          remaining: Money.of(result.remainingQuote, current.allocated.currency),
-          ...(result.averagePrice
-            ? { averagePrice: result.averagePrice }
+          exchangeOrderId: current.exchangeOrderId,
+          status: "cancelled",
+          filled: current.filled,
+          remaining: Money.zero(current.allocated.currency),
+          ...(current.averagePrice
+            ? { averagePrice: current.averagePrice }
             : {}),
           syncedAt: this.clock.now(),
         });

@@ -17,7 +17,6 @@ import { MexcPositionMapper } from "./mexc/position-mapper.js";
 import { MexcActivityReader } from "./mexc/activity-reader.js";
 import { MexcPositionController, validatePositionAction } from "./mexc/position-controller.js";
 import { toMexcExternalOrderId } from "./mexc/external-order-id.js";
-
 interface MexcAccountInfo {
   canTrade?: boolean;
   canWithdraw?: boolean;
@@ -34,7 +33,6 @@ export class MexcGateway implements ExchangeGateway {
       options: { defaultType: credentials.marketType },
     });
   }
-
   async verifyAccess(
     credentials: AccountCredentials,
     accessMode: AccountAccessMode,
@@ -194,7 +192,7 @@ export class MexcGateway implements ExchangeGateway {
       const symbol = this.symbol(reference.symbol, credentials.marketType);
       await exchange.loadMarkets();
       await exchange.cancelOrder(reference.orderId, symbol);
-      return await this.fetchOrder(credentials, reference);
+      return cancelledOrder(reference.orderId);
     } catch (error) {
       throw this.wrap(error, "Unable to cancel MEXC order");
     }
@@ -247,3 +245,5 @@ export class MexcGateway implements ExchangeGateway {
     });
   }
 }
+const cancelledOrder = (orderId: string): ExchangeOrderResult =>
+  ({ orderId, status: "cancelled", filledQuote: "0", remainingQuote: "0" });
