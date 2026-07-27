@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { formatMoney } from "../../shared/format/formatters";
 import { Button } from "../../shared/ui/Button";
 import { validateOrder } from "./order-validation";
+import { useLimitPrice } from "./use-limit-price";
 interface Props {
   accountIds: readonly string[];
   accountEquities: readonly number[];
@@ -43,9 +44,8 @@ export function OrderTicket({
   >("fixed_quote");
   const [allocation, setAllocation] = useState(5);
   const [fixedAmount, setFixedAmount] = useState("");
-  const [price, setPrice] = useState("");
+  const { price, setUserPrice } = useLimitPrice(symbol, marketPrice);
   const [leverage, setLeverage] = useState(1);
-  useEffect(() => { if (marketPrice) setPrice(marketPrice); }, [marketPrice, symbol]);
   useEffect(() => {
     if (!fixedAmount && totalEquity > 0)
       setFixedAmount(String(Math.min(totalEquity * 0.05, 1_000)));
@@ -198,7 +198,7 @@ export function OrderTicket({
               type="number"
               min={0}
               value={price}
-              onChange={(event) => setPrice(event.target.value)}
+              onChange={(event) => setUserPrice(event.target.value)}
             />
             <span>USDT</span>
           </div>
