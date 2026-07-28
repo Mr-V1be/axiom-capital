@@ -4,6 +4,7 @@ import { AccountCredentials } from "../../domain/accounts/account-ports.js";
 import { AccountAccessMode } from "../../domain/accounts/investor-account.js";
 import {
   ExchangeGateway,
+  ExchangeOrderReference,
   ExchangeOrderRequest,
   ExchangeOrderResult,
   PositionActionRequest,
@@ -18,6 +19,7 @@ import { MexcActivityReader } from "./mexc/activity-reader.js";
 import { MexcPositionController, validatePositionAction } from "./mexc/position-controller.js";
 import { toMexcExternalOrderId } from "./mexc/external-order-id.js";
 import { MexcOrderCanceller } from "./mexc/cancellation/order-canceller.js";
+import { MexcTriggerOrderCanceller } from "./mexc/commands/trigger-order-canceller.js";
 interface MexcAccountInfo {
   canTrade?: boolean;
   canWithdraw?: boolean;
@@ -73,7 +75,6 @@ export class MexcGateway implements ExchangeGateway {
   async fetchOpenPositions(credentials: AccountCredentials): Promise<number> {
     return (await this.fetchPositions(credentials)).length;
   }
-
   async fetchPositions(credentials: AccountCredentials) {
     if (credentials.marketType === "spot") return [];
     try {
@@ -87,7 +88,6 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "Unable to fetch open MEXC positions");
     }
   }
-
   async fetchActivity(credentials: AccountCredentials) {
     if (credentials.marketType !== "swap") {
       return { openOrders: [], recentOrders: [], recentTrades: [] };
@@ -98,15 +98,12 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "Unable to fetch MEXC futures activity");
     }
   }
-
   async fetchAccountDetails(credentials: AccountCredentials) {
     return new MexcAccountInspector(this.client(credentials)).inspect();
   }
-
   async fetchMarketQuote(symbol: string, marketType: "spot" | "swap") {
     return new MexcMarketData().fetchQuote(symbol, marketType);
   }
-
   async placeOrder(
     credentials: AccountCredentials,
     request: ExchangeOrderRequest,
@@ -162,7 +159,6 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "MEXC rejected the order");
     }
   }
-
   async fetchOrder(
     credentials: AccountCredentials,
     reference: { orderId: string; symbol: string },
@@ -182,14 +178,18 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "Unable to synchronize MEXC order");
     }
   }
-
   async cancelOrder(
     credentials: AccountCredentials,
-    reference: { orderId: string; symbol: string },
+    reference: ExchangeOrderReference,
   ): Promise<ExchangeOrderResult> {
     try {
       const exchange = this.client(credentials);
       const symbol = this.symbol(reference.symbol, credentials.marketType);
+      if (reference.kind === "trigger") {
+        await new MexcTriggerOrderCanceller(exchange)
+          .cancel(reference.orderId, symbol);
+        return cancelledOrder(reference.orderId);
+      }
       await exchange.loadMarkets();
       await this.orderCanceller.cancel(exchange, reference.orderId, symbol);
       return cancelledOrder(reference.orderId);
@@ -197,7 +197,6 @@ export class MexcGateway implements ExchangeGateway {
       throw this.wrap(error, "Unable to cancel MEXC order");
     }
   }
-
   async executePositionAction(
     credentials: AccountCredentials,
     request: PositionActionRequest,

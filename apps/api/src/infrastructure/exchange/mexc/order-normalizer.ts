@@ -13,6 +13,13 @@ export interface MexcOrderLike {
   info?: Record<string, unknown> | undefined;
 }
 
+export interface MexcActivityOrderLike {
+  side?: string | undefined;
+  type?: string | undefined;
+  reduceOnly?: boolean | undefined;
+  info?: Record<string, unknown> | undefined;
+}
+
 export class MexcOrderNormalizer {
   normalize(
     order: MexcOrderLike,
@@ -60,6 +67,33 @@ export class MexcOrderNormalizer {
       : Decimal.max(allocated.minus(filled), 0);
     return result(order, status, filled, remaining, price);
   }
+}
+
+export function normalizeActivityOrder(order: MexcActivityOrderLike): {
+  side: "buy" | "sell";
+  type: string;
+  reduceOnly: boolean;
+} {
+  const rawSide = String(order.info?.side ?? "");
+  const rawType = String(order.info?.orderType ?? "");
+  return {
+    side: rawSide === "3" || rawSide === "4"
+      ? "sell"
+      : rawSide === "1" || rawSide === "2"
+      ? "buy"
+      : order.side === "sell" ? "sell" : "buy",
+    type: swapOrderType(rawType) ?? order.type ?? "unknown",
+    reduceOnly: rawSide === "2" || rawSide === "4" ||
+      order.reduceOnly === true,
+  };
+}
+
+function swapOrderType(value: string): string | null {
+  if (value === "1" || value === "2") return "limit";
+  if (value === "3") return "ioc";
+  if (value === "4") return "fok";
+  if (value === "5" || value === "6") return "market";
+  return null;
 }
 
 function normalizeStatus(

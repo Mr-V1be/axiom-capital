@@ -21,6 +21,11 @@ import { StatusBadge } from "../../shared/ui/StatusBadge";
 import { Toast } from "../../shared/ui/Toast";
 import { ConnectAccountModal } from "./ConnectAccountModal";
 import { AccountDetailsModal } from "./AccountDetailsModal";
+import {
+  AccountFilters,
+  emptyAccountFilters,
+  matchesAccountFilters,
+} from "./filters/AccountFilters";
 
 export default function AccountsPage() {
   const gateway = useDataGateway();
@@ -33,18 +38,21 @@ export default function AccountsPage() {
   );
   const [search, setSearch] = useState("");
   const [connectOpen, setConnectOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState(emptyAccountFilters);
   const [detailsAccount, setDetailsAccount] =
     useState<InvestorAccountDto | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const accounts = useMemo(() => {
     const normalized = search.trim().toLowerCase();
-    if (!normalized) return query.data?.items ?? [];
-    return (query.data?.items ?? []).filter((account) =>
-      `${account.investorName} ${account.label}`
-        .toLowerCase()
-        .includes(normalized),
-    );
-  }, [query.data, search]);
+    return (query.data?.items ?? []).filter((account) => {
+      const matchesSearch = !normalized ||
+        `${account.investorName} ${account.label}`
+          .toLowerCase()
+          .includes(normalized);
+      return matchesSearch && matchesAccountFilters(account, filters);
+    });
+  }, [query.data, search, filters]);
 
   if (query.status === "loading" && !query.data) {
     return <LoadingState label="Проверяем подключения к бирже" />;
@@ -99,11 +107,17 @@ export default function AccountsPage() {
               placeholder="Найти инвестора или счёт"
             />
           </label>
-          <Button>
+          <Button
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((value) => !value)}
+          >
             <SlidersHorizontal size={15} />
             Фильтры
           </Button>
         </header>
+        {filtersOpen && (
+          <AccountFilters value={filters} onChange={setFilters} />
+        )}
         <div className="table-wrap accounts-table">
           <table>
             <thead>
@@ -183,6 +197,11 @@ export default function AccountsPage() {
                   </td>
                 </tr>
               ))}
+              {!accounts.length && (
+                <tr><td colSpan={7} className="accounts-empty">
+                  Счета по заданным условиям не найдены
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>

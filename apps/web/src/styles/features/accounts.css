@@ -117,3 +117,45 @@
   color: var(--positive);
   font-size: 9px;
 }
+
+.account-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr)) auto;
+  gap: 10px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.account-filters label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-soft);
+  font-size: 10px;
+}
+
+.account-filters select,
+.account-filters button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.account-filters button {
+  align-self: end;
+}
+
+.accounts-empty {
+  padding: 28px !important;
+  color: var(--text-soft);
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .account-filters {
+    grid-template-columns: 1fr;
+  }
+}

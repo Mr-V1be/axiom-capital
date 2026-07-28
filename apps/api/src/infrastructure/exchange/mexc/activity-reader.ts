@@ -4,20 +4,29 @@ import {
   ExchangeActivityOrder,
   ExchangeActivityTrade,
 } from "../../../domain/exchange/exchange-gateway.js";
+import { normalizeActivityOrder } from "./order-normalizer.js";
 
 export class MexcActivityReader {
   constructor(private readonly exchange: mexc) {}
 
   async read(): Promise<ExchangeActivity> {
     await this.exchange.loadMarkets();
-    const [openOrders, recentOrders, positions] = await Promise.all([
+    const [openOrders, recentOrders, positions, triggerOrders] = await Promise.all([
       this.exchange.fetchOpenOrders(undefined, undefined, 100, { type: "swap" }),
       this.exchange.fetchClosedOrders(undefined, undefined, 100, { type: "swap" }),
       this.exchange.fetchPositions(),
+      this.exchange.fetchOrders(undefined, undefined, 100, {
+        type: "swap",
+        method: "contractPrivateGetPlanorderListOrders",
+      }),
     ]);
+    const openTriggers = triggerOrders.filter((order) =>
+      String((order.info as Record<string, unknown> | undefined)?.state) === "1"
+    );
     const symbols = new Set([
       ...openOrders.map((order) => order.symbol),
       ...recentOrders.map((order) => order.symbol),
+      ...triggerOrders.map((order) => order.symbol),
       ...positions.map((position) => position.symbol),
     ].filter((symbol): symbol is string => Boolean(symbol)));
     const tradePages = await Promise.all(
@@ -26,8 +35,16 @@ export class MexcActivityReader {
       ),
     );
     return {
-      openOrders: openOrders.map(mapOrder),
-      recentOrders: recentOrders.map(mapOrder),
+      openOrders: [
+        ...openOrders.map((order) => mapOrder(order, "regular")),
+        ...openTriggers.map((order) => mapOrder(order, "trigger")),
+      ],
+      recentOrders: [
+        ...recentOrders.map((order) => mapOrder(order, "regular")),
+        ...triggerOrders
+          .filter((order) => !openTriggers.includes(order))
+          .map((order) => mapOrder(order, "trigger")),
+      ],
       recentTrades: tradePages
         .flat()
         .map(mapTrade)
@@ -39,22 +56,49 @@ export class MexcActivityReader {
   }
 }
 
-function mapOrder(order: Order): ExchangeActivityOrder {
+function mapOrder(
+  order: Order,
+  kind: "regular" | "trigger",
+): ExchangeActivityOrder {
+  const info = order.info as Record<string, unknown> | undefined;
+  const normalized = normalizeActivityOrder({
+    side: order.side,
+    type: order.type,
+    reduceOnly: order.reduceOnly,
+    info,
+  });
   return {
     id: String(order.id),
     symbol: order.symbol ?? "—",
-    side: order.side === "sell" ? "sell" : "buy",
-    type: order.type ?? "unknown",
-    status: order.status ?? "unknown",
+    side: normalized.side,
+    type: normalized.type,
+    status: kind === "trigger"
+      ? triggerStatus(info?.state)
+      : order.status ?? "unknown",
     amount: decimal(order.amount),
     filled: decimal(order.filled),
     remaining: decimal(order.remaining),
     price: optionalDecimal(order.price),
     averagePrice: optionalDecimal(order.average),
-    reduceOnly: order.reduceOnly === true,
+    reduceOnly: normalized.reduceOnly,
+    kind,
+    triggerPrice: kind === "trigger"
+      ? optionalDecimal(info?.triggerPrice ?? order.triggerPrice)
+      : null,
     createdAt: date(order.timestamp),
     updatedAt: date(order.lastTradeTimestamp ?? order.timestamp),
   };
+}
+
+function triggerStatus(value: unknown): string {
+  const states: Record<string, string> = {
+    "1": "open",
+    "2": "cancelled",
+    "3": "closed",
+    "4": "invalid",
+    "5": "failed",
+  };
+  return states[String(value)] ?? "unknown";
 }
 
 function mapTrade(trade: Trade): ExchangeActivityTrade {

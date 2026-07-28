@@ -167,7 +167,8 @@ export function OrderTicket({
               max={allocationMode === "fixed_quote"
                 ? totalEquity
                 : maxAllocationPercent}
-              step={0.1}
+              step="any"
+              required
               value={allocationMode === "fixed_quote" ? fixedAmount : allocation}
               onChange={(event) => allocationMode === "fixed_quote"
                 ? setFixedAmount(event.target.value)
@@ -197,6 +198,8 @@ export function OrderTicket({
             <input
               type="number"
               min={0}
+              step="any"
+              required
               value={price}
               onChange={(event) => setUserPrice(event.target.value)}
             />
@@ -240,10 +243,7 @@ export function OrderTicket({
         <Zap size={16} />
         Отправить на {accountIds.length} счёта
       </Button>
-      <p className="order-ticket__notice">
-        Каждый ордер получает уникальный idempotency key. Повторная отправка не
-        создаст дубликат сделки.
-      </p>
+      <p className="order-ticket__notice">Idempotency key защищает от дублей.</p>
     </form>
   );
 }

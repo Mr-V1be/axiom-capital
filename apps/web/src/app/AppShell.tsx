@@ -7,10 +7,11 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { Button } from "../shared/ui/Button";
 import { navigation, routeMeta } from "./navigation";
 import { AppRoute, routerStore } from "./router-store";
+import { HeaderOverlay, HeaderOverlayMode } from "./HeaderOverlay";
 
 interface AppShellProps {
   route: AppRoute;
@@ -21,12 +22,23 @@ export function AppShell({
   children,
 }: PropsWithChildren<AppShellProps>) {
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [overlay, setOverlay] = useState<HeaderOverlayMode>(null);
   const meta = routeMeta[route];
 
   const navigate = (next: AppRoute) => {
     routerStore.navigate(next);
     setMobileMenu(false);
   };
+  useEffect(() => {
+    const openSearch = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOverlay("search");
+      }
+    };
+    document.addEventListener("keydown", openSearch);
+    return () => document.removeEventListener("keydown", openSearch);
+  }, []);
 
   return (
     <div className="app-shell">
@@ -76,7 +88,7 @@ export function AppShell({
             <strong>Evgeniy</strong>
             <span>Управляющий</span>
           </div>
-          <button className="icon-button">
+          <button className="icon-button" onClick={() => setOverlay("profile")}>
             <ChevronDown size={15} />
             <span className="visually-hidden">Меню профиля</span>
           </button>
@@ -100,14 +112,16 @@ export function AppShell({
             <h1>{meta.title}</h1>
           </div>
           <div className="topbar__actions">
-            <button className="command-button">
+            <button className="command-button" onClick={() => setOverlay("search")}>
               <Command size={15} />
               <span>Быстрый поиск</span>
               <kbd>⌘ K</kbd>
             </button>
-            <button className="icon-button notification-button">
+            <button
+              className="icon-button notification-button"
+              onClick={() => setOverlay("notifications")}
+            >
               <Bell size={18} />
-              <span className="notification-dot" />
               <span className="visually-hidden">Уведомления</span>
             </button>
             <Button variant="primary" onClick={() => navigate("trading")}>
@@ -130,6 +144,11 @@ export function AppShell({
           </button>
         ))}
       </nav>
+      <HeaderOverlay
+        mode={overlay}
+        onClose={() => setOverlay(null)}
+        onNavigate={navigate}
+      />
     </div>
   );
 }

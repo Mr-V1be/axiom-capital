@@ -81,26 +81,33 @@ export class MexcPositionController {
   private async placeProtection(
     request: Extract<PositionActionRequest, { action: "place_protection" }>,
   ): Promise<PositionActionResult> {
-    const order = await this.exchange.createOrder(
-      request.position.symbol,
-      "market",
-      opposite(request.position.side),
-      Number(request.contracts),
-      undefined,
-      {
-        reduceOnly: true,
-        positionId: request.position.id,
-        externalOid: toMexcExternalOrderId(request.clientOrderId),
-        triggerPrice: Number(request.triggerPrice),
-        triggerType: triggerType(request),
-        executeCycle: 2,
-        trend: priceSource(request.priceSource),
-        orderType: 5,
-      },
-    );
-    if (!order.id) throw new Error("MEXC returned no protection identifier");
+    const market = this.exchange.market(request.position.symbol);
+    const response = await this.exchange.contractPrivatePostPlanorderPlace({
+      symbol: market.id,
+      vol: Number(this.exchange.amountToPrecision(
+        request.position.symbol,
+        Number(request.contracts),
+      )),
+      side: request.position.side === "long" ? 4 : 2,
+      openType: request.position.marginMode === "isolated" ? 1 : 2,
+      positionId: request.position.id,
+      externalOid: toMexcExternalOrderId(request.clientOrderId),
+      triggerPrice: this.exchange.priceToPrecision(
+        request.position.symbol,
+        Number(request.triggerPrice),
+      ),
+      triggerType: triggerType(request),
+      executeCycle: 2,
+      trend: priceSource(request.priceSource),
+      orderType: 5,
+    }) as { success?: boolean; code?: number; message?: string; data?: unknown };
+    if (response.success !== true || response.data === null ||
+        response.data === undefined) {
+      throw new Error(response.message || "MEXC отклонила защитную заявку");
+    }
+    const protectionId = protectionIdentifier(response.data);
     return {
-      references: [String(order.id)],
+      references: [protectionId],
       message: request.protectionType === "take_profit"
         ? "Take Profit установлен"
         : "Stop Loss установлен",
@@ -123,6 +130,19 @@ function triggerType(
 
 function priceSource(source: "last" | "mark" | "index"): 1 | 2 | 3 {
   return source === "last" ? 1 : source === "mark" ? 2 : 3;
+}
+
+function protectionIdentifier(data: unknown): string {
+  if (typeof data === "string" || typeof data === "number") {
+    return String(data);
+  }
+  if (data && typeof data === "object" && "orderId" in data) {
+    const orderId = (data as { orderId?: unknown }).orderId;
+    if (typeof orderId === "string" || typeof orderId === "number") {
+      return String(orderId);
+    }
+  }
+  throw new Error("MEXC returned no protection identifier");
 }
 
 export function validatePositionAction(request: PositionActionRequest): void {

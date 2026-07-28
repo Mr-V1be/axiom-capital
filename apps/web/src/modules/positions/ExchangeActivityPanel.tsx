@@ -22,6 +22,7 @@ export function ExchangeActivityPanel() {
     gateway.cancelExchangeOrder(order.id, {
       accountId: order.accountId,
       symbol: order.symbol,
+      kind: order.kind,
       idempotencyKey: crypto.randomUUID(),
       confirmed: true,
     })
@@ -148,9 +149,19 @@ function ActivityTable(props: {
         <tbody>{orders.map((order) => (
           <tr key={`${order.accountId}:${order.id}`}>
             <td><strong>{dateTime(order.createdAt)}</strong><small>{order.accountLabel}</small></td>
-            <td><strong>{cleanSymbol(order.symbol)}</strong><small>{order.reduceOnly ? "Reduce only" : "Открытие"}</small></td>
+            <td>
+              <strong>{cleanSymbol(order.symbol)}</strong>
+              <small>{order.kind === "trigger"
+                ? "Защитная заявка"
+                : order.reduceOnly ? "Reduce only" : "Открытие"}</small>
+            </td>
             <td><strong>{side(order.side)}</strong><small>{order.type}</small></td>
-            <td><strong>{order.price ?? "Market"}</strong><small>ср. {order.averagePrice ?? "—"}</small></td>
+            <td>
+              <strong>{order.triggerPrice
+                ? `Триггер ${order.triggerPrice}`
+                : order.price ?? "Market"}</strong>
+              <small>ср. {order.averagePrice ?? "—"}</small>
+            </td>
             <td><strong>{order.filled} / {order.amount}</strong><small>ост. {order.remaining}</small></td>
             <td><strong>{order.status}</strong></td>
             {props.tab === "open" && (

@@ -17,6 +17,8 @@ export const ExchangeOrderResponse = Type.Object({
   price: NullableDecimal,
   averagePrice: NullableDecimal,
   reduceOnly: Type.Boolean(),
+  kind: Type.Union([Type.Literal("regular"), Type.Literal("trigger")]),
+  triggerPrice: NullableDecimal,
   createdAt: Type.Union([IsoDateTime, Type.Null()]),
   updatedAt: Type.Union([IsoDateTime, Type.Null()]),
 });
@@ -52,6 +54,10 @@ export const ExchangeActivityResponse = Type.Object({
 export const CancelExchangeOrderBody = Type.Object({
   accountId: EntityId,
   symbol: Type.String(),
+  kind: Type.Optional(Type.Union([
+    Type.Literal("regular"),
+    Type.Literal("trigger"),
+  ])),
   idempotencyKey: Type.String({ minLength: 16, maxLength: 128 }),
   confirmed: Type.Literal(true),
 });

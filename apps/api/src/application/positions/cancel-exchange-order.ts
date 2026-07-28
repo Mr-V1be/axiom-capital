@@ -45,6 +45,7 @@ export class CancelExchangeOrder {
       await connection.gateway.cancelOrder(connection.credentials, {
         orderId,
         symbol: input.symbol,
+        ...(input.kind ? { kind: input.kind } : {}),
       });
       const result = {
         references: [orderId],

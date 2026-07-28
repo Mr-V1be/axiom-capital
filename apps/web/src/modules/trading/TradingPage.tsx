@@ -217,7 +217,7 @@ export default function TradingPage() {
           marketPrice={quote.data?.price ?? null}
           minimumOrderAmount={quote.data?.minimumOrderAmount ?? null}
           contractSize={quote.data?.contractSize ?? null}
-          quoteLive={quote.status === "success"}
+          quoteLive={Boolean(quote.data) && !quote.error}
           maxAllocationPercent={maxAllocationPercent}
           onSymbolChange={setSymbol}
           onSubmit={submit}

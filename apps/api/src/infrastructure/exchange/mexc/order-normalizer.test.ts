@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { MexcOrderNormalizer } from "./order-normalizer.js";
+import {
+  MexcOrderNormalizer,
+  normalizeActivityOrder,
+} from "./order-normalizer.js";
 
 describe("MexcOrderNormalizer", () => {
   it("uses futures margin instead of the leveraged notional", () => {
@@ -60,5 +63,24 @@ describe("MexcOrderNormalizer", () => {
 
     assert.equal(order.filledQuote, "64");
     assert.equal(order.status, "filled");
+  });
+
+  it("maps every MEXC futures side without relying on incomplete CCXT fields", () => {
+    assert.deepEqual(
+      normalizeActivityOrder({ info: { side: "1", orderType: "1" } }),
+      { side: "buy", type: "limit", reduceOnly: false },
+    );
+    assert.deepEqual(
+      normalizeActivityOrder({ info: { side: "2", orderType: "5" } }),
+      { side: "buy", type: "market", reduceOnly: true },
+    );
+    assert.deepEqual(
+      normalizeActivityOrder({ info: { side: "3", orderType: "1" } }),
+      { side: "sell", type: "limit", reduceOnly: false },
+    );
+    assert.deepEqual(
+      normalizeActivityOrder({ info: { side: "4", orderType: "6" } }),
+      { side: "sell", type: "market", reduceOnly: true },
+    );
   });
 });

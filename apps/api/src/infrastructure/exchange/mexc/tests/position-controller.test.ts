@@ -1,47 +1,70 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { mexc } from "ccxt";
-import { ExchangePosition } from "../../../../domain/exchange/exchange-gateway.js";
+import { toMexcExternalOrderId } from "../external-order-id.js";
 import { MexcPositionController } from "../position-controller.js";
 
-const position: ExchangePosition = {
-  id: "position-1",
-  symbol: "BTC/USDT:USDT",
-  side: "long",
-  contracts: "2",
-  contractSize: "0.0001",
-  baseAmount: "0.0002",
-  entryPrice: "64000",
-  currentPrice: "65000",
-  liquidationPrice: null,
-  leverage: "20",
-  marginMode: "cross",
-  notional: "13",
-  initialMargin: "0.65",
-  unrealizedPnl: "0.2",
-  realizedPnl: null,
-  roePercent: null,
-  marginRatioPercent: null,
-  openedAt: null,
-  updatedAt: new Date(),
-};
+function position() {
+  return {
+    id: "position-1",
+    symbol: "BTC/USDT:USDT",
+    side: "long" as const,
+    contracts: "1",
+    contractSize: "0.0001",
+    baseAmount: "0.0001",
+    entryPrice: "64000",
+    liquidationPrice: "32000",
+    marginMode: "cross" as const,
+    leverage: "20",
+    currentPrice: "64000",
+    notional: "6.4",
+    initialMargin: "0.32",
+    unrealizedPnl: "0",
+    realizedPnl: "0",
+    roePercent: "0",
+    marginRatioPercent: "0.3",
+    openedAt: null,
+    updatedAt: new Date("2026-07-28T00:00:00Z"),
+  };
+}
+
+function exchange(response: unknown) {
+  const requests: Record<string, unknown>[] = [];
+  const client = {
+    async loadMarkets() {},
+    market() { return { id: "BTC_USDT" }; },
+    amountToPrecision(_symbol: string, amount: number) {
+      return String(amount);
+    },
+    priceToPrecision(_symbol: string, price: number) {
+      return String(price);
+    },
+    async contractPrivatePostPlanorderPlace(
+      request: Record<string, unknown>,
+    ) {
+      requests.push(request);
+      return response;
+    },
+  } as unknown as mexc;
+  return { client, requests };
+}
 
 describe("MexcPositionController", () => {
   it("closes a long with an opposite reduce-only order", async () => {
     let call: unknown[] = [];
-    const exchange = {
+    const client = {
       async loadMarkets() {},
       async createOrder(...args: unknown[]) {
         call = args;
         return { id: "close-order" };
       },
     } as unknown as mexc;
-    await new MexcPositionController(exchange).execute({
+    await new MexcPositionController(client).execute({
       action: "close",
-      position,
+      position: position(),
       contracts: "1",
       orderType: "market",
-      clientOrderId: "command-key",
+      clientOrderId: "close-command",
     });
 
     assert.equal(call[2], "sell");
@@ -49,39 +72,63 @@ describe("MexcPositionController", () => {
     const parameters = call[5] as Record<string, unknown>;
     assert.equal(parameters.reduceOnly, true);
     assert.equal(parameters.positionId, "position-1");
-    assert.match(String(parameters.externalOid), /^ax_[a-f0-9]{29}$/);
-    assert.equal(String(parameters.externalOid).length, 32);
+    assert.equal(
+      parameters.externalOid,
+      toMexcExternalOrderId("close-command"),
+    );
   });
 
-  it("uses a downward market trigger for a long stop loss", async () => {
-    let parameters: Record<string, unknown> = {};
-    const exchange = {
-      async loadMarkets() {},
-      async createOrder(
-        _symbol: string,
-        _type: string,
-        _side: string,
-        _amount: number,
-        _price: number | undefined,
-        params: Record<string, unknown>,
-      ) {
-        parameters = params;
-        return { id: "protection-order" };
-      },
-    } as unknown as mexc;
-    await new MexcPositionController(exchange).execute({
+  it("uses the native plan-order endpoint and keeps a scalar MEXC id", async () => {
+    const fixture = exchange({
+      success: true,
+      code: 0,
+      data: "837125420401908736",
+    });
+    const result = await new MexcPositionController(fixture.client).execute({
       action: "place_protection",
-      position,
+      position: position(),
+      contracts: "1",
       protectionType: "stop_loss",
-      triggerPrice: "62000",
-      contracts: "2",
+      triggerPrice: "63000",
       priceSource: "mark",
-      clientOrderId: "command-key",
+      clientOrderId: "command-1",
     });
 
-    assert.equal(parameters.reduceOnly, true);
-    assert.equal(parameters.triggerType, 2);
-    assert.equal(parameters.trend, 2);
-    assert.equal(parameters.orderType, 5);
+    assert.deepEqual(result.references, ["837125420401908736"]);
+    assert.deepEqual(fixture.requests[0], {
+      symbol: "BTC_USDT",
+      vol: 1,
+      side: 4,
+      openType: 2,
+      positionId: "position-1",
+      externalOid: toMexcExternalOrderId("command-1"),
+      triggerPrice: "63000",
+      triggerType: 2,
+      executeCycle: 2,
+      trend: 2,
+      orderType: 5,
+    });
+  });
+
+  it("surfaces a rejected plan-order response", async () => {
+    const fixture = exchange({
+      success: false,
+      code: 600,
+      message: "Parameter error",
+      data: null,
+    });
+
+    await assert.rejects(
+      () => new MexcPositionController(fixture.client).execute({
+        action: "place_protection",
+        position: position(),
+        contracts: "1",
+        protectionType: "take_profit",
+        triggerPrice: "65000",
+        priceSource: "last",
+        clientOrderId: "command-2",
+      }),
+      /Parameter error/,
+    );
   });
 });

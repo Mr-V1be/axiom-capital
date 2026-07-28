@@ -6,6 +6,7 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
+import { useState } from "react";
 import { useDataGateway } from "../../shared/data/gateway-context";
 import { formatMoney, formatPercent, formatTime } from "../../shared/format/formatters";
 import { useQuery } from "../../shared/hooks/use-async";
@@ -23,22 +24,47 @@ export default function DashboardPage() {
     [gateway],
   );
   const accounts = useQuery((signal) => gateway.listAccounts(signal), [gateway]);
+  const settlements = useQuery(
+    (signal) => gateway.listSettlements(signal),
+    [gateway],
+  );
+  const [range, setRange] = useState<7 | 30>(30);
 
   if (
     (overview.status === "loading" && !overview.data) ||
-    (accounts.status === "loading" && !accounts.data)
+    (accounts.status === "loading" && !accounts.data) ||
+    (settlements.status === "loading" && !settlements.data)
   ) {
     return <LoadingState label="Собираем портфель по всем счетам" />;
   }
   if (overview.error) return <ErrorState error={overview.error} retry={overview.refresh} />;
   if (accounts.error) return <ErrorState error={accounts.error} retry={accounts.refresh} />;
-  if (!overview.data || !accounts.data) return null;
+  if (settlements.error) {
+    return <ErrorState error={settlements.error} retry={settlements.refresh} />;
+  }
+  if (!overview.data || !accounts.data || !settlements.data) return null;
 
   const data = overview.data;
   const todayPercent =
     (Number(data.pnlToday.amount) /
       Math.max(1, Number(data.totalEquity.amount) - Number(data.pnlToday.amount))) *
     100;
+  const monthPercent = Number(data.pnlMonth.amount) /
+    Math.max(1, Number(data.totalEquity.amount) - Number(data.pnlMonth.amount)) *
+    100;
+  const distributable = settlements.data.items
+    .filter((item) => !["distributed", "cancelled"].includes(item.status))
+    .reduce((sum, item) => sum + Number(item.grossProfit.amount), 0);
+  const drawdownLimit = Math.min(
+    ...accounts.data.items
+      .map((item) => item.riskProfile?.maxDailyLossPercent)
+      .filter((value): value is number => value !== undefined),
+    100,
+  );
+  const curveSince = Date.now() - range * 86_400_000;
+  const curve = data.equityCurve.filter((point) =>
+    new Date(point.at).valueOf() >= curveSince
+  );
 
   return (
     <div className="dashboard page-stack">
@@ -66,7 +92,7 @@ export default function DashboardPage() {
           </span>
           <span>
             <small>Готово к распределению</small>
-            <strong>$1 036,53</strong>
+            <strong>{formatMoney(distributable)}</strong>
           </span>
           <ArrowUpRight size={18} />
         </button>
@@ -83,7 +109,7 @@ export default function DashboardPage() {
         <MetricCard
           label="Доход за месяц"
           value={formatMoney(data.pnlMonth.amount)}
-          caption="+8,14% доходность"
+          caption={`${formatPercent(monthPercent, true)} к капиталу`}
           icon={TrendingUp}
           tone="positive"
         />
@@ -96,7 +122,7 @@ export default function DashboardPage() {
         <MetricCard
           label="Макс. просадка"
           value={formatPercent(data.maxDrawdownPercent)}
-          caption="Лимит стратегии: 8%"
+          caption={`Лимит стратегии: ${formatPercent(drawdownLimit)}`}
           icon={ShieldCheck}
         />
       </section>
@@ -110,13 +136,17 @@ export default function DashboardPage() {
             <h2>Капитал портфеля</h2>
           </div>
           <div className="range-switcher" aria-label="Период графика">
-            <button>7Д</button>
-            <button className="active">30Д</button>
-            <button>90Д</button>
-            <button>Всё</button>
+            <button
+              className={range === 7 ? "active" : ""}
+              onClick={() => setRange(7)}
+            >7Д</button>
+            <button
+              className={range === 30 ? "active" : ""}
+              onClick={() => setRange(30)}
+            >30Д</button>
           </div>
         </header>
-        <EquityChart points={data.equityCurve} />
+        <EquityChart points={curve} />
       </section>
 
       <AccountsPreview accounts={accounts.data.items} />

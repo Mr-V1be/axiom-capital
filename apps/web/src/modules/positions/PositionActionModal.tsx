@@ -41,6 +41,11 @@ export function PositionActionModal({
 
   if (!position) return null;
   const marginBlocked = action === "adjust_margin" && !position.canAdjustMargin;
+  const changeAction = (next: Action) => {
+    setAction(next);
+    setConfirmed(false);
+    command.reset();
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -92,7 +97,7 @@ export function PositionActionModal({
         <label className="field">
           Действие
           <select value={action} onChange={(event) =>
-            setAction(event.target.value as Action)}>
+            changeAction(event.target.value as Action)}>
             <option value="close">Закрыть позицию</option>
             <option value="place_protection">Take Profit / Stop Loss</option>
             <option value="set_leverage">Изменить плечо</option>

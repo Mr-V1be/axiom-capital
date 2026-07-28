@@ -9,7 +9,12 @@ interface QueryState<T> {
 type QueryAction<T> =
   | { type: "loading" }
   | { type: "success"; data: T }
-  | { type: "error"; error: Error };
+  | { type: "error"; error: Error }
+  | { type: "reset" };
+
+function initialState<T>(): QueryState<T> {
+  return { data: null, error: null, status: "idle" };
+}
 
 function reducer<T>(state: QueryState<T>, action: QueryAction<T>): QueryState<T> {
   switch (action.type) {
@@ -19,6 +24,8 @@ function reducer<T>(state: QueryState<T>, action: QueryAction<T>): QueryState<T>
       return { data: action.data, status: "success", error: null };
     case "error":
       return { ...state, status: "error", error: action.error };
+    case "reset":
+      return initialState<T>();
   }
 }
 
@@ -26,11 +33,7 @@ export function useQuery<T>(
   query: (signal: AbortSignal) => Promise<T>,
   dependencies: DependencyList,
 ) {
-  const [state, dispatch] = useReducer(reducer<T>, {
-    data: null,
-    error: null,
-    status: "idle",
-  });
+  const [state, dispatch] = useReducer(reducer<T>, initialState<T>());
   const generation = useRef(0);
 
   const load = useCallback(async () => {
@@ -80,11 +83,7 @@ export function useQuery<T>(
 export function useMutation<TInput, TResult>(
   mutation: (input: TInput) => Promise<TResult>,
 ) {
-  const [state, dispatch] = useReducer(reducer<TResult>, {
-    data: null,
-    error: null,
-    status: "idle",
-  });
+  const [state, dispatch] = useReducer(reducer<TResult>, initialState<TResult>());
 
   const execute = useCallback(
     async (input: TInput) => {
@@ -103,5 +102,7 @@ export function useMutation<TInput, TResult>(
     [mutation],
   );
 
-  return { ...state, execute };
+  const reset = useCallback(() => dispatch({ type: "reset" }), []);
+
+  return { ...state, execute, reset };
 }

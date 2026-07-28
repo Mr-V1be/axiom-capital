@@ -33,6 +33,7 @@ export interface ExchangeOrderResult {
 export interface ExchangeOrderReference {
   orderId: string;
   symbol: string;
+  kind?: "regular" | "trigger";
 }
 
 export interface ExchangePosition {
@@ -69,6 +70,8 @@ export interface ExchangeActivityOrder {
   price: string | null;
   averagePrice: string | null;
   reduceOnly: boolean;
+  kind: "regular" | "trigger";
+  triggerPrice: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
