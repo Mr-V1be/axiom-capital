@@ -40,10 +40,11 @@ export function CreateSettlementModal({
   const effectiveShare = split?.traderSharePercent ?? share;
   const profit = Math.max(0, Number(account?.pnlTotal.amount ?? 0));
   const trader = profit * (effectiveShare / 100);
+  const canSubmit = Boolean(account) && profit > 0;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!account) return;
+    if (!account || !canSubmit) return;
     await onSubmit({
       accountId: account.id,
       periodEnd: new Date().toISOString(),
@@ -65,6 +66,7 @@ export function CreateSettlementModal({
             form="settlement-form"
             type="submit"
             loading={loading}
+            disabled={!canSubmit}
           >
             <Calculator size={16} />
             Создать расчёт
@@ -117,9 +119,15 @@ export function CreateSettlementModal({
         <div className="security-note">
           <ShieldCheck size={19} />
           <div>
-            <strong>High-water mark защищает инвестора</strong>
+            <strong>
+              {canSubmit
+                ? "High-water mark защищает инвестора"
+                : "Расчёт пока недоступен"}
+            </strong>
             <p>
-              {split
+              {!canSubmit
+                ? "На счёте нет прибыли выше high-water mark."
+                : split
                 ? `Доля ${effectiveShare}% зафиксирована проверенным Split.`
                 : "Без Split доля применяется только к расчёту."}
             </p>
