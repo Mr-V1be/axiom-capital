@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   MexcOrderNormalizer,
   normalizeActivityOrder,
+  normalizeMexcSide,
 } from "./order-normalizer.js";
 
 describe("MexcOrderNormalizer", () => {
@@ -82,5 +83,13 @@ describe("MexcOrderNormalizer", () => {
       normalizeActivityOrder({ info: { side: "4", orderType: "6" } }),
       { side: "sell", type: "market", reduceOnly: true },
     );
+  });
+
+  it("normalizes trade sides from native MEXC values before CCXT fallbacks", () => {
+    assert.equal(normalizeMexcSide("1", "sell"), "buy");
+    assert.equal(normalizeMexcSide("2", "sell"), "buy");
+    assert.equal(normalizeMexcSide("3", "buy"), "sell");
+    assert.equal(normalizeMexcSide("4", "buy"), "sell");
+    assert.equal(normalizeMexcSide(undefined, "sell"), "sell");
   });
 });

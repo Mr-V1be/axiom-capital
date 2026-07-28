@@ -77,15 +77,21 @@ export function normalizeActivityOrder(order: MexcActivityOrderLike): {
   const rawSide = String(order.info?.side ?? "");
   const rawType = String(order.info?.orderType ?? "");
   return {
-    side: rawSide === "3" || rawSide === "4"
-      ? "sell"
-      : rawSide === "1" || rawSide === "2"
-      ? "buy"
-      : order.side === "sell" ? "sell" : "buy",
+    side: normalizeMexcSide(rawSide, order.side),
     type: swapOrderType(rawType) ?? order.type ?? "unknown",
     reduceOnly: rawSide === "2" || rawSide === "4" ||
       order.reduceOnly === true,
   };
+}
+
+export function normalizeMexcSide(
+  rawSide: unknown,
+  fallback?: unknown,
+): "buy" | "sell" {
+  const value = String(rawSide ?? "");
+  if (value === "3" || value === "4") return "sell";
+  if (value === "1" || value === "2") return "buy";
+  return fallback === "sell" ? "sell" : "buy";
 }
 
 function swapOrderType(value: string): string | null {

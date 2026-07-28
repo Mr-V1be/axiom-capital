@@ -4,7 +4,10 @@ import {
   ExchangeActivityOrder,
   ExchangeActivityTrade,
 } from "../../../domain/exchange/exchange-gateway.js";
-import { normalizeActivityOrder } from "./order-normalizer.js";
+import {
+  normalizeActivityOrder,
+  normalizeMexcSide,
+} from "./order-normalizer.js";
 
 export class MexcActivityReader {
   constructor(private readonly exchange: mexc) {}
@@ -107,7 +110,7 @@ function mapTrade(trade: Trade): ExchangeActivityTrade {
     id: String(trade.id),
     orderId: trade.order ? String(trade.order) : null,
     symbol: trade.symbol ?? "—",
-    side: trade.side === "sell" ? "sell" : "buy",
+    side: normalizeMexcSide(info?.side, trade.side),
     price: decimal(trade.price),
     amount: decimal(trade.amount),
     cost: decimal(trade.cost),
